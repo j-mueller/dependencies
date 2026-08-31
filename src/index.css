@@ -1,0 +1,333 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+:root {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: #0f172a;
+  background: #e9eef6;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 8% 4%, rgb(199 210 254 / 55%), transparent 28rem),
+    #e9eef6;
+}
+
+.toolbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  min-height: 4.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(203 213 225 / 80%);
+  background: rgb(255 255 255 / 88%);
+  padding: 0.75rem 1.25rem;
+  backdrop-filter: blur(18px);
+}
+
+.logo-mark {
+  display: grid;
+  height: 2.6rem;
+  width: 2.6rem;
+  place-items: center;
+  border-radius: 0.8rem;
+  color: white;
+  background: linear-gradient(145deg, #4f46e5, #7c3aed);
+  box-shadow: 0 8px 22px rgb(79 70 229 / 25%);
+}
+
+.eyebrow {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1rem;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.file-button,
+.primary-link {
+  display: inline-flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 0.65rem;
+  background: #111827;
+  padding: 0.65rem 0.9rem;
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 650;
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.file-button:hover,
+.primary-link:hover {
+  background: #312e81;
+  transform: translateY(-1px);
+}
+
+.file-button:focus-within {
+  outline: 2px solid #6366f1;
+  outline-offset: 3px;
+}
+
+.file-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #fecdd3;
+  background: #fff1f2;
+  padding: 0.7rem 1.25rem;
+  color: #be123c;
+  font-size: 0.8rem;
+}
+
+.workspace {
+  display: grid;
+  min-height: calc(100vh - 4.75rem);
+  grid-template-columns: minmax(0, 1fr) 22rem;
+}
+
+.graph-panel {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.legend {
+  position: absolute;
+  z-index: 5;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  max-width: calc(100% - 2rem);
+  border: 1px solid rgb(203 213 225 / 85%);
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 90%);
+  padding: 0.6rem 0.75rem;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 8%);
+  backdrop-filter: blur(12px);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.legend-line {
+  display: inline-block;
+  width: 1.4rem;
+  border-top-width: 2px;
+}
+
+.legend-line--dependency {
+  border-color: #4f46e5;
+}
+
+.legend-line--subtask {
+  border-color: #a855f7;
+  border-top-style: dashed;
+}
+
+.legend-dot {
+  height: 0.55rem;
+  width: 0.55rem;
+  border-radius: 999px;
+}
+
+.legend-dot--internal {
+  background: #6366f1;
+}
+
+.legend-dot--external {
+  background: #f59e0b;
+}
+
+.task-node {
+  width: 280px;
+  min-height: 162px;
+  border: 1px solid #dbe3ef;
+  border-left: 4px solid #6366f1;
+  border-radius: 0.85rem;
+  background: rgb(255 255 255 / 97%);
+  padding: 1rem;
+  box-shadow: 0 10px 28px rgb(30 41 59 / 11%);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.task-node[data-execution-type="external"] {
+  border-left-color: #f59e0b;
+}
+
+.task-node:hover,
+.task-node--selected {
+  border-color: #818cf8;
+  box-shadow: 0 16px 34px rgb(79 70 229 / 16%);
+  transform: translateY(-2px);
+}
+
+.react-flow__handle {
+  height: 0.62rem;
+  width: 0.62rem;
+  border: 2px solid white;
+  background: #6366f1;
+}
+
+.react-flow__edge-label {
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  background: white;
+  padding: 0.2rem 0.45rem;
+}
+
+.react-flow__controls,
+.react-flow__minimap {
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 8%);
+}
+
+.details-panel {
+  overflow-y: auto;
+  border-left: 1px solid #cbd5e1;
+  background: rgb(255 255 255 / 94%);
+  padding: 1.5rem;
+  box-shadow: -12px 0 30px rgb(15 23 42 / 5%);
+  backdrop-filter: blur(18px);
+}
+
+.details-panel--empty {
+  display: flex;
+  align-items: center;
+}
+
+.detail-label {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detail-value {
+  margin-top: 0.25rem;
+  color: #1e293b;
+  font-weight: 550;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.linked-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.linked-card:hover {
+  border-color: #a5b4fc;
+  color: #4338ca;
+}
+
+.metadata-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.45rem;
+  font-size: 0.78rem;
+}
+
+.metadata-row dt {
+  color: #64748b;
+}
+
+.metadata-row dd {
+  overflow-wrap: anywhere;
+  color: #1e293b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: right;
+}
+
+.state-page {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: #f8fafc;
+  color: #475569;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(32rem, 65vh) auto;
+  }
+
+  .details-panel {
+    border-top: 1px solid #cbd5e1;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .react-flow__minimap {
+    display: none;
+  }
+}

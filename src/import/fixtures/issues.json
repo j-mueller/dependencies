@@ -1,0 +1,79 @@
+[
+  {
+    "number": 1,
+    "title": "Launch the roadmap",
+    "body": "Coordinate the launch.",
+    "createdAt": "2026-08-01T10:00:00Z",
+    "state": "OPEN",
+    "stateReason": null,
+    "url": "https://github.com/acme/roadmap/issues/1",
+    "author": {
+      "login": "octocat",
+      "url": "https://github.com/octocat"
+    },
+    "blockedBy": [],
+    "blocking": [
+      {
+        "number": 3,
+        "url": "https://github.com/acme/roadmap/issues/3"
+      }
+    ],
+    "parent": null,
+    "subIssues": [
+      {
+        "number": 2,
+        "url": "https://github.com/acme/roadmap/issues/2"
+      }
+    ],
+    "closedByPullRequestsReferences": []
+  },
+  {
+    "number": 2,
+    "title": "Build the graph",
+    "body": "Render the imported issues.",
+    "createdAt": "2026-08-02T10:00:00Z",
+    "state": "CLOSED",
+    "stateReason": "COMPLETED",
+    "url": "https://github.com/acme/roadmap/issues/2",
+    "author": {
+      "login": "hubot",
+      "url": "https://github.com/hubot",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/1?v=4"
+    },
+    "blockedBy": [
+      {
+        "number": 3,
+        "url": "https://github.com/acme/roadmap/issues/3"
+      }
+    ],
+    "blocking": [],
+    "parent": {
+      "number": 1,
+      "url": "https://github.com/acme/roadmap/issues/1"
+    },
+    "subIssues": [],
+    "closedByPullRequestsReferences": [
+      {
+        "number": 42,
+        "title": "Build interactive graph",
+        "url": "https://github.com/acme/roadmap/pull/42",
+        "state": "MERGED"
+      }
+    ]
+  },
+  {
+    "number": 3,
+    "title": "Wait for API access",
+    "body": null,
+    "createdAt": "2026-08-03T10:00:00Z",
+    "state": "CLOSED",
+    "stateReason": "NOT_PLANNED",
+    "url": "https://github.com/acme/roadmap/issues/3",
+    "author": null,
+    "blockedBy": [],
+    "blocking": [],
+    "parent": null,
+    "subIssues": [],
+    "closedByPullRequestsReferences": []
+  }
+]

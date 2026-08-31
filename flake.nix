@@ -24,10 +24,15 @@
             packages = with pkgs; [
               nodejs_22
               corepack
+              (python3.withPackages (pythonPackages: [ pythonPackages.playwright ]))
+              playwright-driver.browsers
               prettier
               typescript
               typescript-language-server
             ];
+
+            PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+            PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
           };
         }
       );

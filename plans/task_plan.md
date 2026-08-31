@@ -1,0 +1,108 @@
+# Task Plan: GitHub Task DAG Web UI
+
+## Objective
+
+Build a static React application that loads a versioned JSON task graph, lays it
+out with ELK, expands and collapses GitHub sub-issue hierarchies, and aggregates
+hidden child dependencies onto their visible ancestors. Add a local GitHub CLI
+import command that refreshes GitHub-owned fields while preserving project-local
+metadata.
+
+## Constraints
+
+- The browser application has no server, database, or runtime GitHub access.
+- GitHub access happens through an explicit local import command and the user's
+  existing `gh` authentication.
+- The JSON format is the source of truth and is validated at load time.
+- Relationship directions are explicit: `depends-on` points from the dependent
+  task to its prerequisite; `subtask-of` points from child to parent.
+- Duration is a non-negative number in days for schema version 1. A future
+  schema version can replace it with a discriminated estimate distribution.
+- Local task and relationship metadata survives repeated GitHub imports.
+- The existing untracked `README.md` is preserved and expanded only with project
+  documentation.
+
+## Phases
+
+### Phase 1: Project and contract [DONE]
+
+- [x] Task 1.1: Scaffold Vite, React, Tailwind CSS, Vitest, Oxlint, and strict
+      TypeScript configuration → `package.json`, `package-lock.json`,
+      `vite.config.ts`, `tsconfig*.json`, `.oxlintrc.json`, `index.html`
+- [x] Task 1.2: Add failing tests for the versioned schema and graph validation →
+      `src/model/task-graph.test.ts`
+- [x] Task 1.3: Implement the minimum validation boundary and sample project data →
+      `src/model/task-graph.ts`, `public/tasks.json`
+
+### Phase 2: Graph projection and layout [DONE]
+
+- [x] Task 2.1: Add failing tests for top-level visibility, recursive expansion,
+      relationship accrual, deduplication, and cycles →
+      `src/graph/project-visible-graph.test.ts`
+- [x] Task 2.2: Implement visible graph projection and aggregated edge provenance →
+      `src/graph/project-visible-graph.ts`
+- [x] Task 2.3: Add failing ELK adapter tests, then implement deterministic layered
+      layout → `src/graph/layout.test.ts`, `src/graph/layout.ts`
+
+### Phase 3: GitHub importer [DONE]
+
+- [x] Task 3.1: Add failing fixture-based tests for issue mapping, dependencies,
+      sub-issues, closing pull requests, and metadata preservation →
+      `src/import/github-import.test.ts`, `src/import/fixtures/*.json`
+- [x] Task 3.2: Implement pure GitHub-to-project mapping and merge logic →
+      `src/import/github-import.ts`
+- [x] Task 3.3: Implement the `gh issue list` CLI adapter and import entrypoint →
+      `scripts/import-github.ts`, `package.json`
+
+### Phase 4: Interactive UI [DONE]
+
+- [x] Task 4.1: Add failing component tests for initial top-level rendering,
+      expansion, selection, and invalid-file errors → `src/App.test.tsx`
+- [x] Task 4.2: Implement the React Flow canvas, custom task nodes, relationship
+      styling, ELK relayout, and expand/collapse interaction → `src/App.tsx`,
+      `src/components/TaskGraph.tsx`, `src/components/TaskNode.tsx`
+- [x] Task 4.3: Implement task details, graph legend, loading/error states, and local
+      JSON file loading → `src/components/TaskDetails.tsx`,
+      `src/components/GraphToolbar.tsx`
+- [x] Task 4.4: Add responsive Tailwind styling and accessibility checks →
+      `src/index.css`, `src/App.test.tsx`
+
+### Phase 5: Documentation and verification [DONE]
+
+- [x] Task 5.1: Document setup, JSON format, relationship semantics, local metadata,
+      and GitHub import workflow → `README.md`
+- [x] Task 5.2: Update the Nix shell for project-local verification tools if needed →
+      `flake.nix`, `flake.lock`
+- [x] Task 5.3: Run formatting, lint, typecheck, unit/component tests, production
+      build, and Nix flake checks
+- [x] Task 5.4: Review the finished change for correctness, simplicity, security,
+      performance, and source-comment quality
+
+## Dependencies
+
+- Phase 2 depends on the schema contract in Phase 1.
+- Phase 3 depends on the schema contract but can remain isolated from browser code.
+- Phase 4 depends on graph projection and ELK layout behavior.
+- Phase 5 begins after all implementation phases are green.
+
+## Acceptance Criteria
+
+- [x] The default view displays only tasks with no `subtask-of` parent.
+- [x] Clicking a task with children toggles its direct children; nested parents can
+      be expanded independently.
+- [x] Visible nodes and relationships are laid out by ELK's layered algorithm.
+- [x] Hidden child dependencies are represented between nearest visible ancestors,
+      with duplicate projected edges collapsed and counted.
+- [x] Expanded children show their `subtask-of` links and applicable dependency
+      links.
+- [x] Selecting a task shows title, description, creation time, status, creator,
+      associated closing pull requests, duration, execution type, source link, and
+      local metadata.
+- [x] A user can load another conforming JSON file without a server.
+- [x] Invalid JSON, missing references, duplicate IDs, invalid durations, and graph
+      cycles produce clear errors instead of a broken canvas.
+- [x] The GitHub import command imports issues, blocked-by relationships,
+      sub-issues, parents, and closing pull requests through `gh`.
+- [x] Re-import preserves local metadata for tasks and stable relationships.
+- [x] The production build is entirely static.
+- [x] Lint, strict typecheck, tests, build, and Nix flake checks pass.

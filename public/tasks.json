@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "Task Atlas launch",
+    "sourceRepository": "acme/task-atlas",
+    "importedAt": "2026-08-31T12:00:00Z"
+  },
+  "tasks": [
+    {
+      "id": "github:acme/task-atlas#1",
+      "source": {
+        "provider": "github",
+        "repository": "acme/task-atlas",
+        "issueNumber": 1,
+        "url": "https://github.com/acme/task-atlas/issues/1"
+      },
+      "title": "Launch Task Atlas",
+      "description": "Ship the first useful view of the project task graph.",
+      "createdAt": "2026-08-01T09:00:00Z",
+      "status": "open",
+      "createdBy": {
+        "login": "octocat",
+        "url": "https://github.com/octocat"
+      },
+      "pullRequests": [],
+      "duration": 5,
+      "executionType": "internal",
+      "metadata": {
+        "priority": "high",
+        "owner": "product"
+      }
+    },
+    {
+      "id": "github:acme/task-atlas#2",
+      "source": {
+        "provider": "github",
+        "repository": "acme/task-atlas",
+        "issueNumber": 2,
+        "url": "https://github.com/acme/task-atlas/issues/2"
+      },
+      "title": "Define graph semantics",
+      "description": "Agree how hierarchy and dependency edges behave when collapsed.",
+      "createdAt": "2026-08-02T10:00:00Z",
+      "status": "completed",
+      "createdBy": {
+        "login": "octocat",
+        "url": "https://github.com/octocat"
+      },
+      "pullRequests": [
+        {
+          "number": 12,
+          "title": "Document graph semantics",
+          "url": "https://github.com/acme/task-atlas/pull/12",
+          "status": "merged"
+        }
+      ],
+      "duration": 1.5,
+      "executionType": "internal",
+      "metadata": {
+        "discipline": "product"
+      }
+    },
+    {
+      "id": "github:acme/task-atlas#3",
+      "source": {
+        "provider": "github",
+        "repository": "acme/task-atlas",
+        "issueNumber": 3,
+        "url": "https://github.com/acme/task-atlas/issues/3"
+      },
+      "title": "Build the graph interface",
+      "description": "Render tasks, relationships, and details in the browser.",
+      "createdAt": "2026-08-04T08:30:00Z",
+      "status": "open",
+      "createdBy": {
+        "login": "hubot",
+        "url": "https://github.com/hubot"
+      },
+      "pullRequests": [],
+      "duration": 4,
+      "executionType": "internal",
+      "metadata": {
+        "discipline": "engineering"
+      }
+    },
+    {
+      "id": "github:acme/task-atlas#4",
+      "source": {
+        "provider": "github",
+        "repository": "acme/task-atlas",
+        "issueNumber": 4,
+        "url": "https://github.com/acme/task-atlas/issues/4"
+      },
+      "title": "Implement collapsed dependency projection",
+      "description": "Accrue hidden child dependencies to their visible ancestors.",
+      "createdAt": "2026-08-05T11:15:00Z",
+      "status": "open",
+      "createdBy": {
+        "login": "hubot",
+        "url": "https://github.com/hubot"
+      },
+      "pullRequests": [],
+      "duration": 2,
+      "executionType": "internal",
+      "metadata": {
+        "risk": "medium"
+      }
+    },
+    {
+      "id": "github:acme/task-atlas#5",
+      "source": {
+        "provider": "github",
+        "repository": "acme/task-atlas",
+        "issueNumber": 5,
+        "url": "https://github.com/acme/task-atlas/issues/5"
+      },
+      "title": "GitHub dependency API is available",
+      "description": "Wait for the required relationship fields to be available to the importer.",
+      "createdAt": "2026-08-06T14:00:00Z",
+      "status": "completed",
+      "createdBy": {
+        "login": "octocat",
+        "url": "https://github.com/octocat"
+      },
+      "pullRequests": [],
+      "duration": 3,
+      "executionType": "external",
+      "metadata": {
+        "provider": "github"
+      }
+    },
+    {
+      "id": "github:acme/task-atlas#6",
+      "source": {
+        "provider": "github",
+        "repository": "acme/task-atlas",
+        "issueNumber": 6,
+        "url": "https://github.com/acme/task-atlas/issues/6"
+      },
+      "title": "Publish contributor guide",
+      "description": "Explain the local import and metadata workflow.",
+      "createdAt": "2026-08-07T09:45:00Z",
+      "status": "open",
+      "createdBy": {
+        "login": "monalisa",
+        "url": "https://github.com/monalisa"
+      },
+      "pullRequests": [],
+      "duration": 1,
+      "executionType": "internal",
+      "metadata": {
+        "priority": "normal"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "subtask-of:github:acme/task-atlas#2->github:acme/task-atlas#1",
+      "kind": "subtask-of",
+      "source": "github:acme/task-atlas#2",
+      "target": "github:acme/task-atlas#1",
+      "metadata": {
+        "order": 1
+      }
+    },
+    {
+      "id": "subtask-of:github:acme/task-atlas#3->github:acme/task-atlas#1",
+      "kind": "subtask-of",
+      "source": "github:acme/task-atlas#3",
+      "target": "github:acme/task-atlas#1",
+      "metadata": {
+        "order": 2
+      }
+    },
+    {
+      "id": "subtask-of:github:acme/task-atlas#4->github:acme/task-atlas#3",
+      "kind": "subtask-of",
+      "source": "github:acme/task-atlas#4",
+      "target": "github:acme/task-atlas#3",
+      "metadata": {
+        "order": 1
+      }
+    },
+    {
+      "id": "depends-on:github:acme/task-atlas#3->github:acme/task-atlas#2",
+      "kind": "depends-on",
+      "source": "github:acme/task-atlas#3",
+      "target": "github:acme/task-atlas#2",
+      "metadata": {
+        "reason": "Semantics define the implementation"
+      }
+    },
+    {
+      "id": "depends-on:github:acme/task-atlas#4->github:acme/task-atlas#5",
+      "kind": "depends-on",
+      "source": "github:acme/task-atlas#4",
+      "target": "github:acme/task-atlas#5",
+      "metadata": {
+        "confidence": 0.9
+      }
+    },
+    {
+      "id": "depends-on:github:acme/task-atlas#6->github:acme/task-atlas#1",
+      "kind": "depends-on",
+      "source": "github:acme/task-atlas#6",
+      "target": "github:acme/task-atlas#1",
+      "metadata": {}
+    }
+  ]
+}

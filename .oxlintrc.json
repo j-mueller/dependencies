@@ -1,0 +1,100 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "import",
+    "promise",
+    "react",
+    "react-perf",
+    "jsx-a11y"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "error",
+    "perf": "error",
+    "style": "warn"
+  },
+  "rules": {
+    "complexity": ["error", { "max": 10 }],
+    "max-depth": ["error", { "max": 3 }],
+    "max-nested-callbacks": ["error", { "max": 3 }],
+    "max-lines-per-function": [
+      "error",
+      { "max": 60, "skipBlankLines": true, "skipComments": true }
+    ],
+    "max-lines": [
+      "warn",
+      { "max": 300, "skipBlankLines": true, "skipComments": true }
+    ],
+    "max-params": ["error", { "max": 3 }],
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "no-console": "warn",
+    "import/no-cycle": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "promise/no-return-wrap": "error",
+    "import/no-nodejs-modules": "off",
+    "import/no-named-export": "off",
+    "import/prefer-default-export": "off",
+
+    // Domain schemas read best in contract order, not alphabetic key order.
+    "sort-keys": "off",
+    // Import groups follow dependency flow; Prettier handles mechanical formatting.
+    "sort-imports": "off",
+    // Separate declarations and colocated exports keep modules easier to scan and edit.
+    "one-var": "off",
+    "import/exports-last": "off",
+    "import/group-exports": "off",
+    // Declarations, concise branches, and loop guards are explicit project conventions.
+    "func-style": "off",
+    "no-ternary": "off",
+    "no-continue": "off",
+    // Validation bounds and UI dimensions are meaningful literals near their use.
+    "no-magic-numbers": "off",
+    // Complexity and function length already enforce smaller functions more directly.
+    "max-statements": "off",
+    // Graph coordinates and established identifiers such as x, y, and id are clearer short.
+    "id-length": "off",
+    // TypeScript's type-only import policy intentionally creates separate imports.
+    "no-duplicate-imports": "off",
+    // Declarative schema composition is naturally expressed with nested calls.
+    "unicorn/max-nested-calls": "off",
+    // Vite uses the automatic JSX runtime, so React does not need a value import.
+    "react/react-in-jsx-scope": "off",
+    // PascalCase component files follow the React ecosystem convention.
+    "unicorn/filename-case": "off",
+    // Declarative JSX nesting is clearer than extracting presentation-only wrappers.
+    "react/jsx-max-depth": "off",
+    // Stable component boundaries matter more than literal JSX prop syntax here.
+    "react-perf/jsx-no-new-function-as-prop": "off",
+    "react-perf/jsx-no-new-object-as-prop": "off",
+    // React state callbacks and observer APIs are callbacks by design.
+    "promise/prefer-await-to-callbacks": "off",
+    // React renders null intentionally and exact optional types sometimes require undefined.
+    "unicorn/no-null": "off",
+    "unicorn/no-useless-undefined": "off"
+  },
+  "ignorePatterns": ["dist/", "coverage/"],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "src/test/**"],
+      "rules": {
+        "max-lines-per-function": "off",
+        "max-lines": "off",
+        "max-statements": "off",
+        "no-magic-numbers": "off",
+        "max-classes-per-file": "off"
+      }
+    },
+    {
+      "files": ["**/*.tsx"],
+      "rules": {
+        // JSX expands line counts without adding equivalent control-flow complexity.
+        "max-lines-per-function": "off"
+      }
+    }
+  ]
+}
