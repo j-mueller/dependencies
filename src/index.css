@@ -92,6 +92,26 @@ textarea {
     transform 150ms ease;
 }
 
+.danger-button {
+  display: inline-flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid #fda4af;
+  border-radius: 0.65rem;
+  background: #fff1f2;
+  padding: 0.65rem 0.9rem;
+  color: #be123c;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.danger-button:hover {
+  border-color: #fb7185;
+  background: #ffe4e6;
+}
+
 .primary-button:hover,
 .primary-link:hover {
   background: #312e81;
@@ -100,6 +120,7 @@ textarea {
 
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
+.danger-button:focus-visible,
 .icon-button:focus-visible {
   outline: 2px solid #6366f1;
   outline-offset: 3px;
@@ -107,6 +128,7 @@ textarea {
 
 .primary-button:disabled,
 .secondary-button:disabled,
+.danger-button:disabled,
 .icon-button:disabled {
   cursor: wait;
   opacity: 0.6;
@@ -248,7 +270,7 @@ textarea {
   border-top-width: 2px;
 }
 
-.legend-line--dependency {
+.legend-line--required-for {
   border-color: #4f46e5;
 }
 

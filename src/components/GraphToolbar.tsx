@@ -1,10 +1,11 @@
-import { Network, Plus } from "lucide-react";
+import { Network, Plus, RefreshCw } from "lucide-react";
 
 interface GraphToolbarProps {
   projectName: string;
   taskCount: number;
   relationshipCount: number;
   onCreateTask: () => void;
+  onRelayout: () => void;
 }
 
 export function GraphToolbar({
@@ -12,6 +13,7 @@ export function GraphToolbar({
   taskCount,
   relationshipCount,
   onCreateTask,
+  onRelayout,
 }: GraphToolbarProps) {
   return (
     <header className="toolbar">
@@ -37,21 +39,45 @@ export function GraphToolbar({
             links
           </span>
         </div>
-        <button className="primary-button" type="button" onClick={onCreateTask}>
-          <Plus aria-hidden="true" size={16} />
-          New task
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="secondary-button inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap"
+            type="button"
+            onClick={onRelayout}
+          >
+            <RefreshCw aria-hidden="true" size={16} />
+            Relayout
+          </button>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={onCreateTask}
+          >
+            <Plus aria-hidden="true" size={16} />
+            New task
+          </button>
+        </div>
       </div>
     </header>
   );
 }
 
-export function GraphLegend() {
+interface GraphLegendProps {
+  hideCompleted: boolean;
+  hiddenTaskCount: number;
+  onHideCompletedChange: (hideCompleted: boolean) => void;
+}
+
+export function GraphLegend({
+  hideCompleted,
+  hiddenTaskCount,
+  onHideCompletedChange,
+}: GraphLegendProps) {
   return (
     <div className="legend" aria-label="Graph legend">
       <span className="legend-item">
-        <span className="legend-line legend-line--dependency" />
-        Depends on
+        <span className="legend-line legend-line--required-for" />
+        Is required for
       </span>
       <span className="legend-item">
         <span className="legend-line legend-line--subtask" />
@@ -65,6 +91,17 @@ export function GraphLegend() {
         <span className="legend-dot legend-dot--external" />
         External
       </span>
+      <label className="ml-auto flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-700">
+        <input
+          aria-label="Hide completed"
+          checked={hideCompleted}
+          className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+          type="checkbox"
+          onChange={(event) => onHideCompletedChange(event.target.checked)}
+        />
+        Hide completed
+        <span className="text-slate-400">({hiddenTaskCount})</span>
+      </label>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "project": {
     "name": "Task Atlas launch",
     "sourceRepository": "acme/task-atlas",
@@ -1951,35 +1951,35 @@
       }
     },
     {
-      "id": "depends-on:github:acme/task-atlas#3->github:acme/task-atlas#2",
-      "kind": "depends-on",
-      "source": "github:acme/task-atlas#3",
-      "target": "github:acme/task-atlas#2",
+      "id": "is-required-for:github:acme/task-atlas#2->github:acme/task-atlas#3",
+      "kind": "is-required-for",
+      "source": "github:acme/task-atlas#2",
+      "target": "github:acme/task-atlas#3",
       "metadata": {
         "reason": "Semantics define the implementation"
       }
     },
     {
-      "id": "depends-on:github:acme/task-atlas#4->github:acme/task-atlas#5",
-      "kind": "depends-on",
-      "source": "github:acme/task-atlas#4",
-      "target": "github:acme/task-atlas#5",
+      "id": "is-required-for:github:acme/task-atlas#5->github:acme/task-atlas#4",
+      "kind": "is-required-for",
+      "source": "github:acme/task-atlas#5",
+      "target": "github:acme/task-atlas#4",
       "metadata": {
         "confidence": 0.9
       }
     },
     {
-      "id": "depends-on:github:acme/task-atlas#6->github:acme/task-atlas#1",
-      "kind": "depends-on",
-      "source": "github:acme/task-atlas#6",
-      "target": "github:acme/task-atlas#1",
+      "id": "is-required-for:github:acme/task-atlas#1->github:acme/task-atlas#6",
+      "kind": "is-required-for",
+      "source": "github:acme/task-atlas#1",
+      "target": "github:acme/task-atlas#6",
       "metadata": {}
     },
     {
-      "id": "depends-on:github:realfi-co/realfi-cross-chain-spine#39->github:realfi-co/realfi#1588",
-      "kind": "depends-on",
-      "source": "github:realfi-co/realfi-cross-chain-spine#39",
-      "target": "github:realfi-co/realfi#1588",
+      "id": "is-required-for:github:realfi-co/realfi#1588->github:realfi-co/realfi-cross-chain-spine#39",
+      "kind": "is-required-for",
+      "source": "github:realfi-co/realfi#1588",
+      "target": "github:realfi-co/realfi-cross-chain-spine#39",
       "metadata": {}
     },
     {
@@ -2011,24 +2011,24 @@
       "metadata": {}
     },
     {
-      "id": "depends-on:github:realfi-co/realfi-cross-chain-spine#46->github:realfi-co/realfi-cross-chain-spine#45",
-      "kind": "depends-on",
-      "source": "github:realfi-co/realfi-cross-chain-spine#46",
-      "target": "github:realfi-co/realfi-cross-chain-spine#45",
-      "metadata": {}
-    },
-    {
-      "id": "depends-on:github:realfi-co/realfi-cross-chain-spine#47->github:realfi-co/realfi-cross-chain-spine#46",
-      "kind": "depends-on",
-      "source": "github:realfi-co/realfi-cross-chain-spine#47",
+      "id": "is-required-for:github:realfi-co/realfi-cross-chain-spine#45->github:realfi-co/realfi-cross-chain-spine#46",
+      "kind": "is-required-for",
+      "source": "github:realfi-co/realfi-cross-chain-spine#45",
       "target": "github:realfi-co/realfi-cross-chain-spine#46",
       "metadata": {}
     },
     {
-      "id": "depends-on:github:realfi-co/realfi-cross-chain-spine#48->github:realfi-co/realfi-cross-chain-spine#47",
-      "kind": "depends-on",
-      "source": "github:realfi-co/realfi-cross-chain-spine#48",
+      "id": "is-required-for:github:realfi-co/realfi-cross-chain-spine#46->github:realfi-co/realfi-cross-chain-spine#47",
+      "kind": "is-required-for",
+      "source": "github:realfi-co/realfi-cross-chain-spine#46",
       "target": "github:realfi-co/realfi-cross-chain-spine#47",
+      "metadata": {}
+    },
+    {
+      "id": "is-required-for:github:realfi-co/realfi-cross-chain-spine#47->github:realfi-co/realfi-cross-chain-spine#48",
+      "kind": "is-required-for",
+      "source": "github:realfi-co/realfi-cross-chain-spine#47",
+      "target": "github:realfi-co/realfi-cross-chain-spine#48",
       "metadata": {}
     },
     {

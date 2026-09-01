@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "import:github": "tsx scripts/import-github.ts",
     "lint": "oxlint --deny-warnings",
+    "migrate:data": "tsx scripts/migrate-task-graph.ts",
     "start": "node dist-server/server/index.js",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "./app.js";
 
 const emptyGraph = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   project: { name: "Test roadmap" },
   tasks: [],
   relationships: [],
@@ -16,7 +16,7 @@ const emptyGraph = {
 
 const temporaryDirectories: string[] = [];
 
-async function createFixture(): Promise<{
+async function createFixture(contents: unknown = emptyGraph): Promise<{
   dataPath: string;
   staticRoot: string;
 }> {
@@ -24,7 +24,7 @@ async function createFixture(): Promise<{
   temporaryDirectories.push(directory);
   const dataPath = join(directory, "tasks.json");
   const staticRoot = join(directory, "dist");
-  await writeFile(dataPath, `${JSON.stringify(emptyGraph)}\n`);
+  await writeFile(dataPath, `${JSON.stringify(contents)}\n`);
   await mkdir(staticRoot);
   await writeFile(join(staticRoot, "index.html"), "<main>Task Atlas</main>");
   return { dataPath, staticRoot };
@@ -94,6 +94,246 @@ describe("Task Atlas API", () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ error: "Invalid task" });
+    expect(await readFile(fixture.dataPath, "utf8")).toBe(original);
+    await app.close();
+  });
+
+  it("marks a task completed through the API", async () => {
+    const fixture = await createFixture();
+    const app = await buildApp(fixture);
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        title: "Ship release",
+        description: "",
+        status: "open",
+        createdBy: "jann",
+        duration: 1,
+        executionType: "internal",
+      },
+    });
+    const taskId = created.json().task.id as string;
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: `/api/tasks/${encodeURIComponent(taskId)}`,
+      payload: { status: "completed" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      task: { id: taskId, status: "completed", title: "Ship release" },
+      graph: { tasks: [{ id: taskId, status: "completed" }] },
+    });
+    expect(JSON.parse(await readFile(fixture.dataPath, "utf8"))).toMatchObject({
+      tasks: [{ id: taskId, status: "completed" }],
+    });
+    await app.close();
+  });
+
+  it("changes a task execution type through the API", async () => {
+    const fixture = await createFixture();
+    const app = await buildApp(fixture);
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        title: "Wait for approval",
+        description: "Keep the request ready.",
+        status: "open",
+        createdBy: "jann",
+        duration: 1,
+        executionType: "internal",
+      },
+    });
+    const taskId = created.json().task.id as string;
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: `/api/tasks/${encodeURIComponent(taskId)}`,
+      payload: { executionType: "external" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      task: {
+        id: taskId,
+        executionType: "external",
+        status: "open",
+        title: "Wait for approval",
+      },
+      graph: { tasks: [{ id: taskId, executionType: "external" }] },
+    });
+    expect(JSON.parse(await readFile(fixture.dataPath, "utf8"))).toMatchObject({
+      tasks: [{ id: taskId, executionType: "external" }],
+    });
+    await app.close();
+  });
+
+  it("creates an is-required-for relationship and returns the persisted graph", async () => {
+    const fixture = await createFixture();
+    const app = await buildApp(fixture);
+    const create = (title: string) =>
+      app.inject({
+        method: "POST",
+        url: "/api/tasks",
+        payload: {
+          title,
+          description: "",
+          status: "open",
+          createdBy: "jann",
+          duration: 1,
+          executionType: "internal",
+        },
+      });
+    const prerequisiteResponse = await create("Approve release");
+    const dependentResponse = await create("Ship release");
+    const prerequisite = prerequisiteResponse.json().task.id as string;
+    const dependent = dependentResponse.json().task.id as string;
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/relationships/is-required-for",
+      payload: { source: prerequisite, target: dependent },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      relationship: {
+        kind: "is-required-for",
+        source: prerequisite,
+        target: dependent,
+      },
+      graph: { relationships: [{ source: prerequisite, target: dependent }] },
+    });
+    expect(JSON.parse(await readFile(fixture.dataPath, "utf8"))).toMatchObject({
+      relationships: [{ source: prerequisite, target: dependent }],
+    });
+    await app.close();
+  });
+
+  it("returns a validation error without writing an invalid required-for link", async () => {
+    const fixture = await createFixture();
+    const original = await readFile(fixture.dataPath, "utf8");
+    const app = await buildApp(fixture);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/relationships/is-required-for",
+      payload: { source: "missing", target: "also-missing" },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      error: "Invalid required-for link",
+    });
+    expect(await readFile(fixture.dataPath, "utf8")).toBe(original);
+    await app.close();
+  });
+
+  it("deletes relationships through the API", async () => {
+    const fixture = await createFixture();
+    const app = await buildApp(fixture);
+    const missingId = "is-required-for:missing->also-missing";
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/relationships",
+      payload: { ids: [missingId] },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      error: `Relationship not found: ${missingId}`,
+    });
+    await app.close();
+  });
+
+  it("deletes a task and its incident relationships through the API", async () => {
+    const fixture = await createFixture();
+    const app = await buildApp(fixture);
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        title: "Delete me",
+        description: "",
+        status: "open",
+        createdBy: "jann",
+        duration: 1,
+        executionType: "internal",
+      },
+    });
+    const taskId = created.json().task.id as string;
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: `/api/tasks/${encodeURIComponent(taskId)}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      deletedTaskId: taskId,
+      deletedRelationshipIds: [],
+      graph: { tasks: [] },
+    });
+    expect(JSON.parse(await readFile(fixture.dataPath, "utf8"))).toMatchObject({
+      tasks: [],
+    });
+    await app.close();
+  });
+
+  it("deletes URL-encoded GitHub task IDs", async () => {
+    const taskId = "github:acme/roadmap#3";
+    const fixture = await createFixture({
+      ...emptyGraph,
+      tasks: [
+        {
+          id: taskId,
+          source: {
+            provider: "github",
+            repository: "acme/roadmap",
+            issueNumber: 3,
+            url: "https://github.com/acme/roadmap/issues/3",
+          },
+          title: "Delete me",
+          description: "",
+          createdAt: "2026-09-01T08:00:00Z",
+          status: "open",
+          createdBy: { login: "jann" },
+          pullRequests: [],
+          duration: 1,
+          executionType: "internal",
+          metadata: {},
+        },
+      ],
+    });
+    const app = await buildApp(fixture);
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: `/api/tasks/${encodeURIComponent(taskId)}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ deletedTaskId: taskId });
+    await app.close();
+  });
+
+  it("returns 400 for malformed deletion input", async () => {
+    const fixture = await createFixture();
+    const original = await readFile(fixture.dataPath, "utf8");
+    const app = await buildApp(fixture);
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/relationships",
+      payload: { ids: [] },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ error: "Invalid deletion" });
     expect(await readFile(fixture.dataPath, "utf8")).toBe(original);
     await app.close();
   });

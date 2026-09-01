@@ -3,11 +3,17 @@ import { readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import {
+  createRequiredForInputSchema,
   createTaskInputSchema,
+  deleteRelationshipsInputSchema,
+  deleteTaskInputSchema,
   parseTaskGraph,
+  relationshipSchema,
   taskSchema,
+  updateTaskInputSchema,
 } from "../src/model/task-graph.js";
-import type { Task, TaskGraph } from "../src/model/task-graph.js";
+import type { Relationship, Task, TaskGraph } from "../src/model/task-graph.js";
+import { GraphEntityNotFoundError } from "./graph-errors.js";
 
 interface GraphStoreDependencies {
   createId: () => string;
@@ -17,6 +23,25 @@ interface GraphStoreDependencies {
 interface CreateTaskResult {
   graph: TaskGraph;
   task: Task;
+}
+
+interface UpdateTaskResult {
+  graph: TaskGraph;
+  task: Task;
+}
+
+interface CreateRequiredForResult {
+  graph: TaskGraph;
+  relationship: Relationship;
+}
+
+interface DeleteRelationshipsResult {
+  graph: TaskGraph;
+  deletedRelationshipIds: string[];
+}
+
+interface DeleteTaskResult extends DeleteRelationshipsResult {
+  deletedTaskId: string;
 }
 
 const defaultDependencies: GraphStoreDependencies = {
@@ -62,9 +87,27 @@ export class GraphStore {
     return parseTaskGraph(JSON.parse(await readFile(this.#path, "utf8")));
   }
 
-  createTask(input: unknown): Promise<CreateTaskResult> {
+  migrate(): Promise<TaskGraph> {
+    return this.#enqueue(async () => {
+      const graph = await this.read();
+      await writeAtomically(this.#path, graph);
+      return graph;
+    });
+  }
+
+  #enqueue<Result>(update: () => Promise<Result>): Promise<Result> {
     // oxlint-disable-next-line promise/prefer-await-to-then -- each operation starts after the previous write settles.
-    const operation = this.#writeQueue.then(async () => {
+    const operation = this.#writeQueue.then(update);
+    // oxlint-disable-next-line promise/prefer-await-to-then -- a settled promise tail serializes future writes without poisoning the queue.
+    this.#writeQueue = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    return operation;
+  }
+
+  createTask(input: unknown): Promise<CreateTaskResult> {
+    return this.#enqueue(async () => {
       const values = createTaskInputSchema.parse(input);
       const task = taskSchema.parse({
         id: `local:${this.#dependencies.createId()}`,
@@ -87,11 +130,98 @@ export class GraphStore {
       await writeAtomically(this.#path, graph);
       return { graph, task };
     });
-    // oxlint-disable-next-line promise/prefer-await-to-then -- a settled promise tail serializes future writes without poisoning the queue.
-    this.#writeQueue = operation.then(
-      () => undefined,
-      () => undefined,
-    );
-    return operation;
+  }
+
+  createRequiredFor(input: unknown): Promise<CreateRequiredForResult> {
+    return this.#enqueue(async () => {
+      const values = createRequiredForInputSchema.parse(input);
+      const relationship = relationshipSchema.parse({
+        id: `is-required-for:${values.source}->${values.target}`,
+        kind: "is-required-for",
+        source: values.source,
+        target: values.target,
+        metadata: {},
+      });
+      const current = await this.read();
+      const graph = parseTaskGraph({
+        ...current,
+        relationships: [...current.relationships, relationship],
+      });
+      await writeAtomically(this.#path, graph);
+      return { graph, relationship };
+    });
+  }
+
+  updateTask(input: unknown): Promise<UpdateTaskResult> {
+    return this.#enqueue(async () => {
+      const values = updateTaskInputSchema.parse(input);
+      const current = await this.read();
+      const existing = current.tasks.find(({ id }) => id === values.id);
+      if (existing === undefined) {
+        throw new GraphEntityNotFoundError(`Task not found: ${values.id}`);
+      }
+      const task = taskSchema.parse({
+        ...existing,
+        ...(values.status === undefined ? {} : { status: values.status }),
+        ...(values.executionType === undefined
+          ? {}
+          : { executionType: values.executionType }),
+      });
+      const graph = parseTaskGraph({
+        ...current,
+        tasks: current.tasks.map((candidate) =>
+          candidate.id === task.id ? task : candidate,
+        ),
+      });
+      await writeAtomically(this.#path, graph);
+      return { graph, task };
+    });
+  }
+
+  deleteRelationships(input: unknown): Promise<DeleteRelationshipsResult> {
+    return this.#enqueue(async () => {
+      const values = deleteRelationshipsInputSchema.parse(input);
+      const relationshipIds = [...new Set(values.ids)];
+      const current = await this.read();
+      const existingIds = new Set(current.relationships.map(({ id }) => id));
+      const missingId = relationshipIds.find((id) => !existingIds.has(id));
+      if (missingId !== undefined) {
+        throw new GraphEntityNotFoundError(
+          `Relationship not found: ${missingId}`,
+        );
+      }
+      const deletingIds = new Set(relationshipIds);
+      const graph = parseTaskGraph({
+        ...current,
+        relationships: current.relationships.filter(
+          ({ id }) => !deletingIds.has(id),
+        ),
+      });
+      await writeAtomically(this.#path, graph);
+      return { graph, deletedRelationshipIds: relationshipIds };
+    });
+  }
+
+  deleteTask(input: unknown): Promise<DeleteTaskResult> {
+    return this.#enqueue(async () => {
+      const { id } = deleteTaskInputSchema.parse(input);
+      const current = await this.read();
+      if (!current.tasks.some((task) => task.id === id)) {
+        throw new GraphEntityNotFoundError(`Task not found: ${id}`);
+      }
+      const deletedRelationshipIds = current.relationships
+        .filter(({ source, target }) => source === id || target === id)
+        .map((relationship) => relationship.id);
+      const deletingRelationshipIds = new Set(deletedRelationshipIds);
+      const graph = parseTaskGraph({
+        ...current,
+        tasks: current.tasks.filter((task) => task.id !== id),
+        relationships: current.relationships.filter(
+          (relationship) => !deletingRelationshipIds.has(relationship.id),
+        ),
+      });
+      await writeAtomically(this.#path, graph);
+      return { graph, deletedTaskId: id, deletedRelationshipIds };
+    });
   }
 }

@@ -38,7 +38,7 @@ const makeRelationship = (
 });
 
 const graph: TaskGraph = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   project: { name: "Projection fixture" },
   tasks: [
     makeTask("parent", 1),
@@ -51,8 +51,8 @@ const graph: TaskGraph = {
     makeRelationship("subtask-of", "child-a", "parent"),
     makeRelationship("subtask-of", "child-b", "parent"),
     makeRelationship("subtask-of", "grandchild", "child-b"),
-    makeRelationship("depends-on", "child-a", "external"),
-    makeRelationship("depends-on", "grandchild", "external"),
+    makeRelationship("is-required-for", "external", "child-a"),
+    makeRelationship("is-required-for", "external", "grandchild"),
   ],
 };
 
@@ -63,18 +63,18 @@ describe("projectVisibleGraph", () => {
     expect(projected.tasks.map(({ id }) => id)).toEqual(["parent", "external"]);
   });
 
-  it("accrues and deduplicates hidden child dependencies", () => {
+  it("accrues and deduplicates hidden child required-for links", () => {
     const projected = projectVisibleGraph(graph, new Set());
 
     expect(projected.relationships).toEqual([
       {
-        id: "projected:depends-on:parent->external",
-        kind: "depends-on",
-        source: "parent",
-        target: "external",
+        id: "projected:is-required-for:external->parent",
+        kind: "is-required-for",
+        source: "external",
+        target: "parent",
         relationshipIds: [
-          "depends-on:child-a->external",
-          "depends-on:grandchild->external",
+          "is-required-for:external->child-a",
+          "is-required-for:external->grandchild",
         ],
         aggregatedCount: 2,
       },
@@ -99,8 +99,8 @@ describe("projectVisibleGraph", () => {
     ).toEqual([
       { kind: "subtask-of", source: "child-a", target: "parent" },
       { kind: "subtask-of", source: "child-b", target: "parent" },
-      { kind: "depends-on", source: "child-a", target: "external" },
-      { kind: "depends-on", source: "child-b", target: "external" },
+      { kind: "is-required-for", source: "external", target: "child-a" },
+      { kind: "is-required-for", source: "external", target: "child-b" },
     ]);
   });
 

@@ -22,7 +22,21 @@ npm run dev
 This starts the API on `http://127.0.0.1:3000` and Vite on
 `http://127.0.0.1:5199`. Open the Vite URL during development. It proxies `/api`
 requests to the backend. **New task** creates a project-local task and persists
-the complete validated graph to `public/tasks.json`.
+the complete validated graph to `public/tasks.json`. The **Created by** field
+starts with the newest task's creator, suggests other recently used values, and
+accepts new ones. Press Ctrl+Enter anywhere in the New Task pane to create the
+task. Drag a task card to reposition it. Drag from a task's right connector to
+another task's left connector to record that the first task is required for the
+second. **Relayout** reruns ELK and resets manual positions.
+
+Select a task or relationship to inspect it in the side panel. Relationship
+details include the type, visible endpoints, and local metadata from every JSON
+relationship represented by the displayed edge. Delete actions require
+confirmation. Deleting a task also deletes all relationships connected to it.
+Select an unfinished task and choose **Mark done** to persist its completed
+status. Choose **Cancel task** to persist its cancelled status. **Hide completed**
+removes completed and cancelled tasks and their incident links from the current
+view while keeping unfinished children visible.
 
 Run all local quality gates with:
 
@@ -45,9 +59,9 @@ from `dist/`. Configure it with these environment variables:
 - `TASK_GRAPH_PATH`: JSON graph path. Defaults to `public/tasks.json`.
 - `STATIC_ROOT`: compiled frontend directory. Defaults to `dist`.
 
-The API validates graph reads and task writes. It serializes concurrent task
-creations within the service and replaces the JSON file with an atomic rename, so
-clients never observe a partially written graph.
+The API validates graph reads, task creation and updates, and relationship writes.
+It serializes concurrent graph changes within the service and replaces the JSON
+file with an atomic rename, so clients never observe a partially written graph.
 
 The service intentionally defaults to the loopback interface and does not include
 authentication. Keep it behind SSH forwarding for personal use. Add an
@@ -56,13 +70,13 @@ process needs read and write access to `TASK_GRAPH_PATH` and its parent director
 
 ## JSON format
 
-The source file is a versioned task graph. Schema version 1 uses a non-negative
+The source file is a versioned task graph. Schema version 2 uses a non-negative
 number of days for `duration`. A later schema version can introduce estimate
 distributions without making the current field ambiguous.
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "project": {
     "name": "Release plan",
     "sourceRepository": "acme/widget",
@@ -95,10 +109,11 @@ distributions without making the current field ambiguous.
 }
 ```
 
-Task status is `open`, `completed`, or `not-planned`. Execution type is
+Task status is `open`, `completed`, `cancelled`, or `not-planned`. Execution type is
 `internal` when a known resource under project control can do the work, or
 `external` when the project must wait for an outside event or party. Task and
-relationship `metadata` values may contain any JSON object content.
+relationship `metadata` values may contain any JSON object content. Select a task
+in the graph to change its execution type from the inspector.
 
 Tasks created in the UI use a local source instead of a GitHub issue identity:
 
@@ -122,18 +137,25 @@ Every relationship has a stable ID, a `kind`, two task IDs, and local metadata:
 
 ```json
 {
-  "id": "depends-on:github:acme/widget#12->github:acme/widget#8",
-  "kind": "depends-on",
-  "source": "github:acme/widget#12",
-  "target": "github:acme/widget#8",
+  "id": "is-required-for:github:acme/widget#8->github:acme/widget#12",
+  "kind": "is-required-for",
+  "source": "github:acme/widget#8",
+  "target": "github:acme/widget#12",
   "metadata": { "reason": "Release requires approval" }
 }
 ```
 
 Relationship direction is significant:
 
-- `depends-on` points from the dependent task to its prerequisite.
+- `is-required-for` points from the prerequisite to the task that needs it.
 - `subtask-of` points from the child task to its parent.
+
+Version 1 files are accepted and converted in memory by reversing each
+`depends-on` relationship. Persist the conversion explicitly with:
+
+```sh
+npm run migrate:data -- PATH
+```
 
 Task IDs and relationship IDs must be unique. All endpoints must exist. A task
 can have at most one parent. Self-links and cycles within either relationship

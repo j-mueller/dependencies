@@ -225,3 +225,120 @@ is unavailable even though the project itself is ESM.
 application code remains asynchronous where it performs browser I/O.
 
 **Impact:** No application change is required.
+
+## Phase 8 findings
+
+- The live local task sheet contains 4 tasks and no relationships. It must remain
+  the source for the restarted instance.
+- React Flow nodes are currently controlled by an ELK-derived position map and
+  explicitly marked non-draggable. Updating that map on drag stop preserves a
+  user's placement until the visible graph is laid out again.
+- Depends-on direction is already represented as source (dependent task) to target
+  (prerequisite), matching the existing right source and left target handles.
+- Relationship writes belong in GraphStore's existing serialized atomic-write
+  boundary so concurrent task and relationship mutations cannot lose updates.
+- React Flow's `onNodeDragStop` works with the controlled position map. Auto-fit
+  must key off completed ELK layouts rather than every position update, otherwise
+  a manual drop immediately recenters the canvas.
+- The production browser path successfully created a source-to-target dependency
+  from the dependent task to its prerequisite and persisted it through the API.
+
+## Phase 9 findings
+
+- The preserved local sheet now contains 4 tasks and 1 relationship created by
+  the user through the connector UI.
+- A React Flow edge is a projection. Its `relationshipIds` provenance may identify
+  several underlying JSON relationships when hidden child links accrue to a
+  visible parent.
+- Edge inspection and deletion must therefore operate on the projected edge's
+  provenance. The confirmation copy will state when more than one relationship
+  is affected.
+- Task deletion must remove every incident relationship in the same serialized,
+  atomic graph-store mutation or the validated graph would contain dangling
+  endpoints.
+- URL-encoded GitHub IDs containing `/` and `#` round-trip correctly through the
+  Fastify task deletion route.
+- Malformed deletion bodies need route-level Zod handling. Letting them reach the
+  generic error handler incorrectly turns client validation failures into 500s.
+- React Flow's SVG edge group covers a large bounding rectangle. Browser pointer
+  verification must click a point on the interaction path itself, which is also
+  why the UI uses a 24-pixel edge interaction width.
+- Review removed a pass-through deletion-dialog wrapper and separated initial
+  focus from Escape handling so submission state changes do not steal focus.
+
+## Phase 10 findings
+
+- The persisted `depends-on` direction is the opposite of the requested arrow
+  meaning. This requires a versioned data migration, not only a UI label change.
+- React Flow renders `animated` edges with a moving dash pattern. The dependency
+  edge was therefore visually dashed even though its explicit stroke style was
+  solid.
+- Schema version 2 will use `is-required-for` with the prerequisite as `source`
+  and the dependent task as `target`. Version 1 input will reverse each
+  `depends-on` relationship and preserve its metadata.
+- The live sheet currently contains 4 tasks and no relationships. The user
+  deleted its prior relationship before this migration began.
+
+## Phase 12 findings
+
+- Task status already has a canonical `completed` value, so marking work done
+  needs no schema migration. It needs one validated, serialized update operation.
+- Filtering is presentation state and must not rewrite the JSON graph.
+- Removing completed tasks and their incident relationships before hierarchy
+  projection promotes unfinished children of completed parents to top-level work
+  and avoids dangling displayed edges.
+- The live sheet contains local tasks, so completing a task will not interact with
+  GitHub-owned status during the requested browser flow.
+- The graph already uses `elkjs` with ELK's layered algorithm. A relayout request
+  can reuse the existing async layout path by remounting the graph view.
+- Remounting the graph view on an explicit relayout request resets its controlled
+  manual positions and viewport, then runs the normal ELK layout path.
+- The live task sheet changed through the user's ongoing UI work during this
+  phase. Final read-only verification found 5 tasks and 3 relationships, and the
+  disposable browser check did not modify it.
+
+## Phase 13 findings
+
+- The existing recent-creator list is already ordered by descending `createdAt`,
+  so its first value is the correct creator default without adding state.
+- Routing Ctrl+Enter through `HTMLFormElement.requestSubmit()` preserves native
+  form validation and the existing submit/error behavior.
+- `cancelled` is a distinct terminal label. **Hide completed** continues to hide
+  only tasks whose status is `completed`.
+- Final read-only verification found 7 tasks and 5 relationships in the live
+  sheet. Browser verification used a separate temporary JSON file.
+
+## Phase 14 findings
+
+- The status API and client already accept `cancelled`, so cancelling an existing
+  task needs only a new inspector action and generalized pending-status state.
+- Tracking the pending status prevents a cancellation request from showing the
+  unrelated **Marking done…** label.
+- Final read-only verification found 7 tasks and 5 relationships in the live
+  sheet. The cancellation browser flow used a separate temporary JSON file.
+
+## Phase 15 findings
+
+- Filtering, the legend count, and post-mutation selection cleanup all need the
+  same completed-or-cancelled predicate. Keeping it in the task model prevents
+  those three behaviors from drifting.
+- `not-planned` remains visible because the request names only completed and
+  cancelled tasks as hidden work.
+- Final read-only verification found 7 tasks, including 1 cancelled task, and 5
+  relationships in the live sheet. Browser verification used disposable data.
+
+## Phase 16 findings
+
+- Status and execution type are both partial edits to the same task entity. One
+  allowlisted PATCH contract keeps validation and atomic persistence consistent.
+- The controlled selector reflects only the graph returned by the API. Failed
+  writes therefore leave both the inspector and JSON at the prior value.
+- Final read-only verification found 7 tasks and 5 relationships in the live
+  sheet. All 7 currently use internal execution. Browser verification used
+  disposable data.
+
+## Phase 17 findings
+
+- Both affected controls use the shared secondary-button style inside flex
+  layouts. Explicit intrinsic sizing and no-wrap utilities prevent flex shrink
+  from splitting their labels.

@@ -6,6 +6,7 @@ import { createTaskInputSchema } from "../model/task-graph";
 import type { CreateTaskInput } from "../model/task-graph";
 
 interface CreateTaskDialogProps {
+  createdByOptions: readonly string[];
   error: string | undefined;
   isSubmitting: boolean;
   onClose: () => void;
@@ -18,23 +19,31 @@ function formValue(form: FormData, name: string): string {
 }
 
 export function CreateTaskDialog({
+  createdByOptions,
   error,
   isSubmitting,
   onClose,
   onCreate,
 }: CreateTaskDialogProps) {
   const titleReference = useRef<HTMLInputElement>(null);
+  const formReference = useRef<HTMLFormElement>(null);
   const [validationError, setValidationError] = useState<string>();
 
   useEffect(() => {
     titleReference.current?.focus();
-    const closeOnEscape = (event: KeyboardEvent): void => {
+    const handleKeyboardShortcut = (event: KeyboardEvent): void => {
+      if (event.ctrlKey && event.key === "Enter" && !isSubmitting) {
+        event.preventDefault();
+        formReference.current?.requestSubmit();
+        return;
+      }
       if (event.key === "Escape" && !isSubmitting) {
         onClose();
       }
     };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", handleKeyboardShortcut);
+    return () =>
+      document.removeEventListener("keydown", handleKeyboardShortcut);
   }, [isSubmitting, onClose]);
 
   const submit = (event: FormEvent<HTMLFormElement>): void => {
@@ -85,7 +94,7 @@ export function CreateTaskDialog({
           </button>
         </div>
 
-        <form className="mt-6 space-y-4" onSubmit={submit}>
+        <form ref={formReference} className="mt-6 space-y-4" onSubmit={submit}>
           <label className="form-field">
             <span>Title</span>
             <input ref={titleReference} name="title" maxLength={200} required />
@@ -97,8 +106,22 @@ export function CreateTaskDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="form-field">
               <span>Created by</span>
-              <input name="createdBy" maxLength={100} required />
+              <input
+                name="createdBy"
+                list="recent-created-by-values"
+                maxLength={100}
+                autoComplete="off"
+                defaultValue={createdByOptions[0] ?? ""}
+                required
+              />
             </label>
+            <datalist id="recent-created-by-values">
+              {createdByOptions.map((creator) => (
+                <option key={creator} value={creator}>
+                  {creator}
+                </option>
+              ))}
+            </datalist>
             <label className="form-field">
               <span>Duration (days)</span>
               <input
@@ -115,6 +138,7 @@ export function CreateTaskDialog({
               <select name="status" defaultValue="open">
                 <option value="open">Open</option>
                 <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
                 <option value="not-planned">Not planned</option>
               </select>
             </label>

@@ -112,6 +112,95 @@ metadata.
 - [x] Task 7.6: Review the backend boundary, write safety, UI behavior, and
       finished diff
 
+### Phase 8: Interactive task graph editing [DONE]
+
+- [x] Task 8.1: Add failing tests for recent creators and persisted dependency
+      creation
+- [x] Task 8.2: Add an editable recent-creators control to task creation
+- [x] Task 8.3: Add serialized depends-on persistence and its HTTP client/API
+- [x] Task 8.4: Enable node dragging and connector-driven dependency creation
+- [x] Task 8.5: Verify unit, integration, type, lint, build, and browser behavior
+- [x] Task 8.6: Review the finished implementation and restart the live instance
+
+### Phase 9: Selection and deletion [DONE]
+
+- [x] Task 9.1: Add failing store and API tests for relationship deletion and
+      cascading task deletion → `server/*.test.ts`
+- [x] Task 9.2: Add failing component tests for edge inspection, metadata, and
+      confirmed task/edge deletion → `src/App.test.tsx`
+- [x] Task 9.3: Implement serialized deletion contracts and HTTP clients →
+      `src/model/task-graph.ts`, `server/*.ts`, `src/api/task-api.ts`
+- [x] Task 9.4: Implement mutually exclusive node/edge selection and inspector
+      views → `src/App.tsx`, `src/components/*.tsx`
+- [x] Task 9.5: Verify tests, accessibility, builds, browser behavior, and the
+      preserved live task sheet
+- [x] Task 9.6: Review the final diff and restart the live instance
+
+### Phase 10: Required-for relationship direction [DONE]
+
+- [x] Task 10.1: Add failing schema, importer, store, API, projection, and UI tests
+- [x] Task 10.2: Migrate schema version 1 `depends-on` links into version 2
+      `is-required-for` links with reversed endpoints
+- [x] Task 10.3: Update GitHub import, connector persistence, projection, labels,
+      and edge styling for source-as-prerequisite semantics
+- [x] Task 10.4: Migrate bundled and live JSON files without losing local metadata
+- [x] Task 10.5: Verify tests, formatting, lint, types, builds, Nix, and browser behavior
+- [x] Task 10.6: Review the finished implementation and restart the live instance
+
+### Phase 11: Continuous node dragging [DONE]
+
+- [x] Task 11.1: Add a failing component regression test for intermediate drag positions
+- [x] Task 11.2: Update controlled node positions during pointer movement
+- [x] Task 11.3: Verify tests, lint, types, build, and live browser behavior
+- [x] Task 11.4: Review the change and keep the live instance running
+
+### Phase 12: Complete tasks and hide completed work [DONE]
+
+- [x] Task 12.1: Add failing store and API tests for persisted task completion
+- [x] Task 12.2: Add failing component tests for marking a selected task done
+- [x] Task 12.3: Add failing graph-filter tests for completed nodes, incident edges,
+      and unfinished children of completed parents
+- [x] Task 12.4: Implement the validated status mutation through model, store,
+      API, client, and task inspector
+- [x] Task 12.5: Implement an accessible show/hide-completed graph filter
+- [x] Task 12.6: Add a toolbar action that reruns the ELK layout for the current view
+- [x] Task 12.7: Verify tests, accessibility, builds, Nix, and live browser behavior
+- [x] Task 12.8: Review the finished implementation and keep the live instance running
+
+### Phase 13: Cancelled tasks and faster creation [DONE]
+
+- [x] Task 13.1: Add failing contract and UI tests for the cancelled status
+- [x] Task 13.2: Add failing UI tests for newest-creator prepopulation and
+      Control+Enter submission
+- [x] Task 13.3: Implement the status, creator default, and keyboard shortcut
+- [x] Task 13.4: Verify tests, accessibility, builds, Nix, and browser behavior
+- [x] Task 13.5: Review the finished implementation and preserve the live sheet
+
+### Phase 14: Cancel existing tasks [DONE]
+
+- [x] Task 14.1: Add a failing inspector test for persisted cancellation
+- [x] Task 14.2: Generalize the selected-task status action and add **Cancel task**
+- [x] Task 14.3: Verify tests, accessibility, builds, Nix, and browser behavior
+- [x] Task 14.4: Review the finished implementation and preserve the live sheet
+
+### Phase 15: Hide cancelled tasks [DONE]
+
+- [x] Task 15.1: Add failing filter and UI tests for cancelled tasks
+- [x] Task 15.2: Treat completed and cancelled statuses as hidden terminal work
+- [x] Task 15.3: Clear selection when cancellation hides the selected task
+- [x] Task 15.4: Verify checks, browser behavior, and the preserved live sheet
+- [x] Task 15.5: Review the finished implementation
+- [x] Phase 16: Edit task execution type
+  - [x] Task 16.1: Specify partial task updates in store, API, and UI tests
+  - [x] Task 16.2: Persist execution type changes through the atomic task update path
+  - [x] Task 16.3: Add the execution selector to the task inspector
+  - [x] Task 16.4: Run quality gates and browser persistence verification
+  - [x] Task 16.5: Review the finished implementation
+- [x] Phase 17: Prevent action labels from wrapping
+  - [x] Task 17.1: Reproduce narrow secondary action buttons in a UI test
+  - [x] Task 17.2: Keep Relayout and Cancel task at their intrinsic widths
+  - [x] Task 17.3: Run quality gates and browser verification
+
 ## Dependencies
 
 - Phase 2 depends on the schema contract in Phase 1.
@@ -160,3 +249,36 @@ metadata.
 - [x] Failed validation or persistence leaves the JSON file unchanged and returns a
       clear API/UI error.
 - [x] Development uses a Vite proxy while production runs one Node process.
+- [x] The Created by field suggests distinct creators ordered by most recent use
+      while accepting new values.
+- [x] A pointer can reposition a visible task node without changing task data.
+- [x] Connecting one task's source handle to another task's target handle creates
+      and persists a depends-on relationship.
+- [x] Invalid, duplicate, self-referential, or cyclic dependencies do not modify
+      the JSON graph.
+- [x] Selecting a displayed edge shows its relationship type and underlying local
+      metadata in the side panel.
+- [x] Deleting a displayed edge confirms and atomically removes every underlying
+      relationship represented by that edge.
+- [x] Deleting a task confirms and atomically removes the task plus its incident
+      relationships.
+- [x] Failed or stale deletion requests leave the JSON graph unchanged and show a
+      clear error.
+- [x] An `is-required-for` arrow from A to B means B needs A.
+- [x] Version 1 `depends-on` relationships migrate by reversing endpoints while
+      preserving relationship metadata.
+- [x] Required-for edges are solid and subtask-of edges are dashed in both the
+      graph and legend.
+- [x] A selected open task can be marked completed and the JSON file is updated
+      atomically.
+- [x] Completed tasks can be hidden without hiding their unfinished descendants.
+- [x] Relationships incident to hidden completed tasks do not appear in the graph.
+- [x] Relayout discards manual positions and reruns ELK for the current graph view.
+- [x] A task can use the `cancelled` status throughout validation and the UI.
+- [x] New Task prepopulates Created by from the task with the latest creation time.
+- [x] Control+Enter submits a valid New Task form through the normal save flow.
+- [x] A selected non-cancelled task can be cancelled through the inspector.
+- [x] **Hide completed** also hides cancelled tasks and counts both statuses.
+- [x] A selected task can switch between internal and external execution, and the
+      JSON file is updated atomically without changing unrelated task fields.
+- [x] Relayout and Cancel task remain on one line with aligned icons.

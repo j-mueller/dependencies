@@ -9,22 +9,22 @@ const nodes = [
 
 const edges = [
   {
-    id: "depends-on:dependent->prerequisite",
-    source: "dependent",
-    target: "prerequisite",
+    id: "is-required-for:prerequisite->dependent",
+    source: "prerequisite",
+    target: "dependent",
   },
 ];
 
 describe("layoutGraph", () => {
-  it("lays dependency edges out from left to right", async () => {
+  it("lays required-for edges out from left to right", async () => {
     const result = await layoutGraph(nodes, edges);
     const dependent = result.positions.get("dependent");
     const prerequisite = result.positions.get("prerequisite");
 
     expect(dependent).toBeDefined();
     expect(prerequisite).toBeDefined();
-    expect(prerequisite?.x).toBeGreaterThan(
-      dependent?.x ?? Number.POSITIVE_INFINITY,
+    expect(dependent?.x).toBeGreaterThan(
+      prerequisite?.x ?? Number.POSITIVE_INFINITY,
     );
     expect(result.width).toBeGreaterThan(0);
     expect(result.height).toBeGreaterThan(0);

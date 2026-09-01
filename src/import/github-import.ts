@@ -173,10 +173,10 @@ function collectRelationships({
   for (const issue of issues) {
     const issueId = taskId(repository, issue.number);
     for (const blockedBy of issue.blockedBy) {
-      add("depends-on", issueId, referencedTaskId(blockedBy));
+      add("is-required-for", referencedTaskId(blockedBy), issueId);
     }
     for (const blocking of issue.blocking) {
-      add("depends-on", referencedTaskId(blocking), issueId);
+      add("is-required-for", issueId, referencedTaskId(blocking));
     }
     if (issue.parent !== null) {
       add("subtask-of", issueId, referencedTaskId(issue.parent));
@@ -266,7 +266,7 @@ export function upsertGithubIssues({
     sourceRepository ?? existing?.project.sourceRepository;
 
   return parseTaskGraph({
-    schemaVersion: 1,
+    schemaVersion: 2,
     project: {
       name: existing?.project.name ?? projectName,
       ...(retainedSourceRepository === undefined

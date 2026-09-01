@@ -1,14 +1,30 @@
-import { ArrowUpRight, CircleUserRound, GitPullRequest } from "lucide-react";
+import {
+  ArrowUpRight,
+  Ban,
+  Check,
+  CircleUserRound,
+  GitPullRequest,
+  Trash2,
+} from "lucide-react";
 
-import type { Task } from "../model/task-graph";
+import { executionTypeSchema } from "../model/task-graph";
+import type { Task, TaskStatus } from "../model/task-graph";
 
 interface TaskDetailsProps {
   task: Task | undefined;
+  error: string | undefined;
+  isUpdating: boolean;
+  updatingStatus: TaskStatus | undefined;
+  onCancel: () => void;
+  onDelete: () => void;
+  onExecutionTypeChange: (executionType: Task["executionType"]) => void;
+  onMarkDone: () => void;
 }
 
 const statusLabels: Record<Task["status"], string> = {
   open: "Open",
   completed: "Completed",
+  cancelled: "Cancelled",
   "not-planned": "Not planned",
 };
 
@@ -17,18 +33,85 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   timeStyle: "short",
 });
 
-export function TaskDetails({ task }: TaskDetailsProps) {
+function TaskActions({
+  task,
+  error,
+  isUpdating,
+  updatingStatus,
+  onCancel,
+  onDelete,
+  onMarkDone,
+}: TaskDetailsProps & { task: Task }) {
+  return (
+    <>
+      {task.source.provider === "github" ? (
+        <a className="primary-link mt-7" href={task.source.url}>
+          Open on GitHub
+          <ArrowUpRight aria-hidden="true" size={16} />
+        </a>
+      ) : null}
+
+      {error === undefined ? null : (
+        <p
+          className="mt-6 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
+
+      {task.status === "completed" ? null : (
+        <button
+          className="primary-button mt-7"
+          disabled={isUpdating}
+          type="button"
+          onClick={onMarkDone}
+        >
+          <Check aria-hidden="true" size={16} />
+          {updatingStatus === "completed" ? "Marking done…" : "Mark done"}
+        </button>
+      )}
+
+      {task.status === "cancelled" ? null : (
+        <button
+          className="secondary-button mt-7 inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap"
+          disabled={isUpdating}
+          type="button"
+          onClick={onCancel}
+        >
+          <Ban aria-hidden="true" size={16} />
+          {updatingStatus === "cancelled" ? "Cancelling…" : "Cancel task"}
+        </button>
+      )}
+
+      <button className="danger-button mt-7" type="button" onClick={onDelete}>
+        <Trash2 aria-hidden="true" size={16} />
+        Delete task
+      </button>
+    </>
+  );
+}
+
+export function TaskDetails({
+  task,
+  error,
+  isUpdating,
+  updatingStatus,
+  onCancel,
+  onDelete,
+  onExecutionTypeChange,
+  onMarkDone,
+}: TaskDetailsProps) {
   if (task === undefined) {
     return (
       <aside className="details-panel details-panel--empty">
         <div>
           <p className="eyebrow">Inspector</p>
           <h2 className="mt-2 text-xl font-semibold text-slate-900">
-            Select a task
+            Select a task or relationship
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-500">
-            Open a node to inspect its source, estimate, ownership, and pull
-            requests.
+            Open a node or edge to inspect its project data.
           </p>
         </div>
       </aside>
@@ -66,7 +149,22 @@ export function TaskDetails({ task }: TaskDetailsProps) {
         </div>
         <div>
           <dt className="detail-label">Execution</dt>
-          <dd className="detail-value capitalize">{task.executionType}</dd>
+          <dd className="detail-value">
+            <select
+              aria-label="Execution"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-wait disabled:bg-slate-100"
+              disabled={isUpdating}
+              value={task.executionType}
+              onChange={(event) =>
+                onExecutionTypeChange(
+                  executionTypeSchema.parse(event.target.value),
+                )
+              }
+            >
+              <option value="internal">Internal</option>
+              <option value="external">External</option>
+            </select>
+          </dd>
         </div>
         <div>
           <dt className="detail-label">Created</dt>
@@ -140,12 +238,16 @@ export function TaskDetails({ task }: TaskDetailsProps) {
         )}
       </section>
 
-      {task.source.provider === "github" ? (
-        <a className="primary-link mt-7" href={task.source.url}>
-          Open on GitHub
-          <ArrowUpRight aria-hidden="true" size={16} />
-        </a>
-      ) : null}
+      <TaskActions
+        error={error}
+        isUpdating={isUpdating}
+        task={task}
+        updatingStatus={updatingStatus}
+        onCancel={onCancel}
+        onDelete={onDelete}
+        onExecutionTypeChange={onExecutionTypeChange}
+        onMarkDone={onMarkDone}
+      />
     </aside>
   );
 }

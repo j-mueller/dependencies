@@ -18,12 +18,14 @@ export type TaskFlowNode = Node<TaskNodeData, "task">;
 const statusStyles: Record<Task["status"], string> = {
   open: "bg-sky-100 text-sky-800",
   completed: "bg-emerald-100 text-emerald-800",
+  cancelled: "bg-rose-100 text-rose-700",
   "not-planned": "bg-slate-200 text-slate-600",
 };
 
 const statusLabels: Record<Task["status"], string> = {
   open: "Open",
   completed: "Completed",
+  cancelled: "Cancelled",
   "not-planned": "Not planned",
 };
 
@@ -39,7 +41,11 @@ export function TaskNode({ data }: NodeProps<TaskFlowNode>) {
       className={`task-node ${data.selected ? "task-node--selected" : ""}`}
       data-execution-type={task.executionType}
     >
-      <Handle type="target" position={Position.Left} isConnectable={false} />
+      <Handle
+        type="target"
+        position={Position.Left}
+        aria-label={`Make ${task.title} require another task`}
+      />
       <div className="flex items-center justify-between gap-3">
         <span className="font-mono text-[0.68rem] tracking-[0.16em] text-slate-500 uppercase">
           {sourceLabel}
@@ -87,7 +93,11 @@ export function TaskNode({ data }: NodeProps<TaskFlowNode>) {
           </button>
         ) : null}
       </div>
-      <Handle type="source" position={Position.Right} isConnectable={false} />
+      <Handle
+        type="source"
+        position={Position.Right}
+        aria-label={`Make ${task.title} required for another task`}
+      />
     </article>
   );
 }

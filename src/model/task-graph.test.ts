@@ -33,7 +33,7 @@ const task = {
 } as const;
 
 const validGraph = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   project: {
     name: "Acme roadmap",
     sourceRepository: "acme/roadmap",
@@ -53,8 +53,8 @@ const validGraph = {
   ],
   relationships: [
     {
-      id: "depends-on:github:acme/roadmap#1->github:acme/roadmap#2",
-      kind: "depends-on",
+      id: "is-required-for:github:acme/roadmap#1->github:acme/roadmap#2",
+      kind: "is-required-for",
       source: "github:acme/roadmap#1",
       target: "github:acme/roadmap#2",
       metadata: { confidence: 0.8 },
@@ -63,10 +63,39 @@ const validGraph = {
 } as const;
 
 describe("parseTaskGraph", () => {
-  it("accepts a valid version 1 task graph", () => {
+  it("accepts a valid version 2 task graph", () => {
     const result = parseTaskGraph(validGraph);
 
     expect(result).toEqual(validGraph);
+  });
+
+  it("migrates version 1 dependencies by reversing their endpoints", () => {
+    const legacyGraph = {
+      ...validGraph,
+      schemaVersion: 1,
+      relationships: [
+        {
+          id: "depends-on:dependent->prerequisite",
+          kind: "depends-on",
+          source: "github:acme/roadmap#1",
+          target: "github:acme/roadmap#2",
+          metadata: { confidence: 0.8 },
+        },
+      ],
+    };
+
+    expect(parseTaskGraph(legacyGraph)).toMatchObject({
+      schemaVersion: 2,
+      relationships: [
+        {
+          id: "is-required-for:github:acme/roadmap#2->github:acme/roadmap#1",
+          kind: "is-required-for",
+          source: "github:acme/roadmap#2",
+          target: "github:acme/roadmap#1",
+          metadata: { confidence: 0.8 },
+        },
+      ],
+    });
   });
 
   it("accepts a locally-created task without a GitHub identity", () => {
@@ -88,6 +117,16 @@ describe("parseTaskGraph", () => {
     expect(parseTaskGraph(graph).tasks.at(-1)?.source).toEqual({
       provider: "local",
     });
+  });
+
+  it("accepts cancelled tasks", () => {
+    const cancelledGraph = {
+      ...validGraph,
+      tasks: [{ ...task, status: "cancelled" }],
+      relationships: [],
+    } as const;
+
+    expect(parseTaskGraph(cancelledGraph).tasks[0]?.status).toBe("cancelled");
   });
 
   it("rejects negative durations", () => {
@@ -123,7 +162,7 @@ describe("parseTaskGraph", () => {
     expect(() => parseTaskGraph(graph)).toThrow(/unknown target/iu);
   });
 
-  it.each(["depends-on", "subtask-of"] as const)(
+  it.each(["is-required-for", "subtask-of"] as const)(
     "rejects %s cycles",
     (kind) => {
       const graph = parseTaskGraph(validGraph);

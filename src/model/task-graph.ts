@@ -38,56 +38,131 @@ const pullRequestSchema = z.object({
   status: z.enum(["open", "closed", "merged"]),
 });
 
+export const taskStatusSchema = z.enum([
+  "open",
+  "completed",
+  "cancelled",
+  "not-planned",
+]);
+
+export const executionTypeSchema = z.enum(["internal", "external"]);
+
 export const taskSchema = z.object({
   id: z.string().min(1),
   source: taskSourceSchema,
   title: z.string().min(1),
   description: z.string(),
   createdAt: z.iso.datetime({ offset: true }),
-  status: z.enum(["open", "completed", "not-planned"]),
+  status: taskStatusSchema,
   createdBy: actorSchema,
   pullRequests: z.array(pullRequestSchema),
   duration: z.number().nonnegative(),
-  executionType: z.enum(["internal", "external"]),
+  executionType: executionTypeSchema,
   metadata: metadataSchema,
 });
 
 export const createTaskInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().max(20_000),
-  status: z.enum(["open", "completed", "not-planned"]),
+  status: taskStatusSchema,
   createdBy: z.string().trim().min(1).max(100),
   duration: z.number().nonnegative().finite(),
-  executionType: z.enum(["internal", "external"]),
+  executionType: executionTypeSchema,
 });
 
 export const relationshipSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(["depends-on", "subtask-of"]),
+  kind: z.enum(["is-required-for", "subtask-of"]),
   source: z.string().min(1),
   target: z.string().min(1),
   metadata: metadataSchema,
 });
 
+export const createRequiredForInputSchema = z.object({
+  source: z.string().trim().min(1),
+  target: z.string().trim().min(1),
+});
+
+export const deleteRelationshipsInputSchema = z.object({
+  ids: z.array(z.string().trim().min(1)).min(1).max(10_000),
+});
+
+export const deleteTaskInputSchema = z.object({
+  id: z.string().trim().min(1),
+});
+
+const taskUpdateFields = {
+  status: taskStatusSchema.optional(),
+  executionType: executionTypeSchema.optional(),
+};
+
+function includesTaskUpdate(values: {
+  status?: TaskStatus | undefined;
+  executionType?: Task["executionType"] | undefined;
+}): boolean {
+  return values.status !== undefined || values.executionType !== undefined;
+}
+
+export const updateTaskBodySchema = z
+  .object(taskUpdateFields)
+  .refine(includesTaskUpdate, { message: "A task update is required" });
+
+export const updateTaskInputSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    ...taskUpdateFields,
+  })
+  .refine(includesTaskUpdate, { message: "A task update is required" });
+
+const projectSchema = z.object({
+  name: z.string().min(1),
+  sourceRepository: z
+    .string()
+    .regex(/^[^/]+\/[^/]+$/u)
+    .optional(),
+  importedAt: z.iso.datetime({ offset: true }).optional(),
+});
+
 const baseTaskGraphSchema = z.object({
-  schemaVersion: z.literal(1),
-  project: z.object({
-    name: z.string().min(1),
-    sourceRepository: z
-      .string()
-      .regex(/^[^/]+\/[^/]+$/u)
-      .optional(),
-    importedAt: z.iso.datetime({ offset: true }).optional(),
-  }),
+  schemaVersion: z.literal(2),
+  project: projectSchema,
   tasks: z.array(taskSchema),
   relationships: z.array(relationshipSchema),
 });
 
+const legacyTaskGraphSchema = z.object({
+  schemaVersion: z.literal(1),
+  project: projectSchema,
+  tasks: z.array(taskSchema),
+  relationships: z.array(
+    z.object({
+      id: z.string().min(1),
+      kind: z.enum(["depends-on", "subtask-of"]),
+      source: z.string().min(1),
+      target: z.string().min(1),
+      metadata: metadataSchema,
+    }),
+  ),
+});
+
 export type Task = z.infer<typeof taskSchema>;
 export type CreateTaskInput = z.infer<typeof createTaskInputSchema>;
+export type TaskStatus = z.infer<typeof taskStatusSchema>;
+export type UpdateTaskBody = z.infer<typeof updateTaskBodySchema>;
+export type UpdateTaskInput = z.infer<typeof updateTaskInputSchema>;
+export type CreateRequiredForInput = z.infer<
+  typeof createRequiredForInputSchema
+>;
+export type DeleteRelationshipsInput = z.infer<
+  typeof deleteRelationshipsInputSchema
+>;
 export type Relationship = z.infer<typeof relationshipSchema>;
 export type TaskGraph = z.infer<typeof baseTaskGraphSchema>;
 export type RelationshipKind = Relationship["kind"];
+
+export function isCompletedOrCancelled(status: TaskStatus): boolean {
+  return status === "completed" || status === "cancelled";
+}
 
 function addDuplicateIssues(
   values: readonly { id: string }[],
@@ -184,7 +259,7 @@ function validateGraph(graph: TaskGraph, context: z.core.$RefinementCtx): void {
     }
   }
 
-  for (const kind of ["depends-on", "subtask-of"] as const) {
+  for (const kind of ["is-required-for", "subtask-of"] as const) {
     if (containsCycle([...taskIds], graph.relationships, kind)) {
       context.addIssue({
         code: "custom",
@@ -203,6 +278,52 @@ export const createTaskResponseSchema = z.object({
   task: taskSchema,
 });
 
+export const updateTaskResponseSchema = z.object({
+  graph: taskGraphSchema,
+  task: taskSchema,
+});
+
+export const createRequiredForResponseSchema = z.object({
+  graph: taskGraphSchema,
+  relationship: relationshipSchema,
+});
+
+export const deleteRelationshipsResponseSchema = z.object({
+  graph: taskGraphSchema,
+  deletedRelationshipIds: z.array(z.string()),
+});
+
+export const deleteTaskResponseSchema = z.object({
+  graph: taskGraphSchema,
+  deletedTaskId: z.string(),
+  deletedRelationshipIds: z.array(z.string()),
+});
+
 export function parseTaskGraph(input: unknown): TaskGraph {
-  return taskGraphSchema.parse(input);
+  const { schemaVersion } = z
+    .object({ schemaVersion: z.union([z.literal(1), z.literal(2)]) })
+    .parse(input);
+  if (schemaVersion === 2) {
+    return taskGraphSchema.parse(input);
+  }
+
+  const legacy = legacyTaskGraphSchema.parse(input);
+  return taskGraphSchema.parse({
+    ...legacy,
+    schemaVersion: 2,
+    relationships: legacy.relationships.map((relationship) => {
+      if (relationship.kind === "subtask-of") {
+        return relationship;
+      }
+      const source = relationship.target;
+      const target = relationship.source;
+      return {
+        id: `is-required-for:${source}->${target}`,
+        kind: "is-required-for",
+        source,
+        target,
+        metadata: relationship.metadata,
+      };
+    }),
+  });
 }

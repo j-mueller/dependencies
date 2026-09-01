@@ -61,8 +61,8 @@ describe("importGithubIssues", () => {
     });
 
     expect(graph.relationships.map(({ id }) => id).toSorted()).toEqual([
-      "depends-on:github:acme/roadmap#2->github:acme/roadmap#3",
-      "depends-on:github:acme/roadmap#3->github:acme/roadmap#1",
+      "is-required-for:github:acme/roadmap#1->github:acme/roadmap#3",
+      "is-required-for:github:acme/roadmap#3->github:acme/roadmap#2",
       "subtask-of:github:acme/roadmap#2->github:acme/roadmap#1",
     ]);
   });
@@ -80,7 +80,7 @@ describe("importGithubIssues", () => {
     task.metadata = { owner: "platform", estimateSource: "planning" };
     const relationship = findById<Relationship>(
       existing.relationships,
-      "depends-on:github:acme/roadmap#2->github:acme/roadmap#3",
+      "is-required-for:github:acme/roadmap#3->github:acme/roadmap#2",
     );
     relationship.metadata = { confidence: 0.6 };
 

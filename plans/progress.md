@@ -193,3 +193,158 @@
 ### Status
 
 - Phase 6: IN PROGRESS (Task 6.1 next)
+
+## 2026-09-01: Phase 8 interactive graph editing
+
+- Preserved the user-populated `.task-atlas/tasks.json` file with 4 tasks.
+- Stopped the live development process before changing the frontend and API.
+- Chose an editable HTML datalist for recent creator suggestions and React Flow's
+  controlled node/connection callbacks for graph gestures.
+- Added serialized atomic dependency creation through the model, graph store,
+  Fastify API, frontend API, and React Flow connector callback.
+- Added MRU creator suggestions, enabled node dragging, and kept auto-fit limited
+  to ELK layout changes so manual drops remain stable.
+- Passed 57 tests, lint, strict type checking, client/server builds, and a
+  production Chromium check against a disposable graph.
+- Browser verification covered arbitrary creator entry, node displacement,
+  connector interaction, persisted relationship direction, and edge rendering.
+- Reviewed the final diff for reuse, simplicity, validation, write safety, and
+  performance. No critical or high-severity findings remain.
+
+## 2026-09-01: Phase 9 selection and deletion
+
+- Stopped the live process after confirming the user-populated sheet contains 4
+  tasks and 1 relationship.
+- Defined projected-edge deletion as removal of all provenance relationships,
+  with an explicit affected-count confirmation.
+- Defined task deletion as an atomic cascade over the task and all incident
+  relationships.
+- Added relationship and task deletion schemas, serialized graph-store mutations,
+  HTTP routes and clients, stale-request handling, and encoded GitHub ID coverage.
+- Added mutually exclusive task/edge selection, selected-edge emphasis, projected
+  edge provenance inspection, metadata rendering, and confirmation dialogs.
+- Passed 69 unit, API, component, stale-state, focus, and accessibility tests.
+- Passed a production Chromium flow for edge selection, metadata inspection,
+  cancellation, edge deletion, and cascading task deletion against disposable
+  data.
+- Reviewed reuse, complexity, validation, atomicity, focus behavior, XSS safety,
+  and graph performance. No critical or high-severity findings remain.
+
+## 2026-09-01: Phase 10 required-for direction
+
+- Replaced the canonical `depends-on` kind with `is-required-for`, where the
+  source is the prerequisite and the target is the task that needs it.
+- Added schema version 2 and a version 1 migration that reverses dependency
+  endpoints, regenerates stable IDs, and preserves local metadata.
+- Updated GitHub blocked-by/blocking imports, graph creation APIs, React Flow
+  connectors, projections, inspector labels, and accessible connector names.
+- Removed React Flow edge animation because it visually dashed required-for
+  links. Required-for links are solid with arrowheads; subtask links are dashed.
+- Migrated `public/tasks.json` to 81 tasks and 15 relationships. Migrated the
+  live sheet to schema version 2 with its 4 tasks and 0 relationships intact.
+- Passed 73 tests, formatting, lint, strict type checking, client/server builds,
+  dependency audit, Nix flake checks, and production Chromium style checks.
+- Reviewed migration safety, importer direction, API validation, connector
+  semantics, edge styling, and stale terminology. No critical or high-severity
+  findings remain.
+
+## 2026-09-01: Phase 11 continuous node dragging
+
+- Added a component regression test that sends an intermediate React Flow drag
+  event and asserts the controlled node position updates immediately.
+- Moved position updates from `onNodeDragStop` to React Flow's controlled
+  `onNodesChange` stream so task cards follow the pointer throughout a drag.
+- Passed 74 tests, formatting, lint, strict type checking, and client/server
+  builds.
+- Verified in Chromium that a live node moved 105 pixels horizontally and 53
+  pixels vertically before the mouse button was released.
+- Reviewed render behavior, state scope, and test quality. No critical or
+  high-severity findings remain.
+
+## 2026-09-01: Phase 12 task completion, filtering, and relayout
+
+- Added a validated task-status contract and a serialized atomic graph-store
+  mutation exposed through `PATCH /api/tasks/:taskId`.
+- Added **Mark done** to the selected-task inspector and persisted the canonical
+  `completed` status without changing other task fields.
+- Added **Hide completed** as view state. Filtering removes incident links before
+  hierarchy projection, so unfinished children of completed parents remain
+  visible as top-level work.
+- Added **Relayout** to reset manual positions and rerun the existing ELK layered
+  layout for the current graph view.
+- Passed 83 tests, formatting, lint, strict type checking, client/server builds,
+  dependency audit, and Nix flake checks.
+- Passed a production Chromium flow for relayout, completion persistence, and
+  hierarchy-safe filtering against disposable JSON data.
+- Reviewed validation, atomicity, render behavior, filter complexity, and test
+  quality. No critical or high-severity findings remain.
+
+## 2026-09-01: Phase 13 cancelled tasks and faster creation
+
+- Added `cancelled` to the shared task-status schema, New Task selector, graph
+  badge, and task inspector.
+- Prepopulated **Created by** from the task with the latest `createdAt` value while
+  retaining the editable recent-creator suggestions.
+- Added Ctrl+Enter submission through the form's native `requestSubmit()` path,
+  preserving validation, pending state, API errors, and close-on-success behavior.
+- Passed 85 tests, formatting, lint, strict type checking, client/server builds,
+  dependency audit, and Nix flake checks.
+- Passed a production Chromium flow that confirmed the newest creator default,
+  cancelled selection, Ctrl+Enter persistence, dialog closure, and status display
+  against disposable JSON data.
+- Reviewed status exhaustiveness, keyboard listener cleanup, validation, and test
+  quality. No critical or high-severity findings remain.
+
+## 2026-09-01: Phase 14 cancel existing tasks
+
+- Generalized the selected-task status mutation so inspector actions share the
+  validated, atomic status API without duplicating request logic.
+- Added **Cancel task** for every non-cancelled task. The action persists
+  `cancelled`, shows **Cancelling…** while pending, and disappears on success.
+- Kept **Mark done** available on cancelled tasks so a task can subsequently be
+  completed without editing JSON.
+- Passed 86 tests, formatting, lint, strict type checking, client/server builds,
+  dependency audit, and Nix flake checks.
+- Passed a production Chromium cancellation flow against disposable JSON and
+  confirmed task metadata was preserved.
+- Reviewed transition state, API reuse, validation, rendering, and test quality.
+  No critical or high-severity findings remain.
+
+## 2026-09-01: Phase 15 hide cancelled tasks
+
+- Added one shared completed-or-cancelled predicate for graph filtering, legend
+  counts, and post-status-update selection cleanup.
+- Updated **Hide completed** to remove both completed and cancelled tasks plus
+  their incident relationships before hierarchy projection.
+- Kept unfinished descendants visible and left `not-planned` tasks unaffected.
+- Passed 87 tests, formatting, lint, strict type checking, client/server builds,
+  dependency audit, and Nix flake checks.
+- Passed a production Chromium flow showing open, completed, and cancelled tasks,
+  then confirming only open work remains when the filter is enabled.
+- Reviewed predicate reuse, graph validity, render behavior, and test quality. No
+  critical or high-severity findings remain.
+
+## 2026-09-01: Phase 16 editable execution type
+
+- Generalized the validated task PATCH contract so status and execution type use
+  one serialized atomic graph-store mutation.
+- Added an accessible Internal/External selector to the selected-task inspector.
+- Preserved every task field omitted from a partial update and rejected empty or
+  invalid task updates before persistence.
+- Passed 90 tests, formatting, lint, strict type checking, client/server builds,
+  dependency audit, and Nix flake evaluation.
+- Passed a production Chromium flow that changed execution type in disposable
+  JSON and confirmed unrelated title and metadata fields remained unchanged.
+- Reviewed validation reuse, mutation serialization, pending UI state, error
+  handling, security, performance, and test quality. No critical or high-severity
+  findings remain.
+
+## 2026-09-01: Phase 17 secondary action sizing
+
+- Added a regression test for the Relayout and Cancel task button layouts.
+- Kept both controls at their intrinsic widths and prevented their labels from
+  wrapping while preserving centered icon alignment.
+- Passed 91 tests, formatting, lint, strict type checking, client/server builds,
+  dependency audit, and Nix flake evaluation.
+- Confirmed in Chromium at an 800-pixel viewport that both controls use no-wrap
+  text and contain their full content without horizontal overflow.
