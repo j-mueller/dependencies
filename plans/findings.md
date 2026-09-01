@@ -1,5 +1,60 @@
 # Findings
 
+## 2026-08-31 — Cross Chain project import
+
+**Context:** The requested source is the organization-level GitHub Project named
+“Cross Chain,” not a single repository.
+
+**Finding:** `realfi-co` project 4 contains 86 issue items across
+`realfi-co/realfi` and `realfi-co/realfi-cross-chain-spine`. The `gh project
+item-list` JSON exposes membership through each item's `content.repository` and
+`content.number`. Detailed dependency, hierarchy, author, and PR fields remain
+available through one `gh issue list` call per repository.
+
+**Decision:** Add `--project OWNER/NUMBER` as an explicit target. Discover project
+membership first, fetch represented repositories once, filter those issue lists,
+and upsert the batches by stable task and relationship IDs.
+
+**Impact:** Existing repository imports remain compatible. Project imports can span
+repositories without introducing a server or direct token handling.
+
+`gh project view NUMBER --owner OWNER --format json` provides the project title and
+URL. `gh project item-list NUMBER --owner OWNER --limit 10000 --format json`
+provides issue membership. Draft items can be ignored because they have no GitHub
+issue identity or relationship data.
+
+**Upsert semantics:** Refresh GitHub-owned fields for matching tasks. Preserve task
+duration, execution type, and metadata. Preserve every existing task and
+relationship not present in the import. Preserve relationship metadata when an
+imported stable relationship ID already exists.
+
+---
+
+## 2026-08-31 — Live GitHub relationship API
+
+**Context:** The first live project dry run failed before writing output.
+
+**Finding:** `gh issue list --json` in gh 2.89.0 rejects `blockedBy`, `blocking`,
+`parent`, and `subIssues`. GitHub's live GraphQL schema exposes all four directly
+on `Issue` as `IssueConnection` or `Issue` fields.
+
+**Decision:** Use `gh issue list` only to discover issue numbers for legacy
+repository imports. Fetch full selected issues through batched GraphQL aliases,
+including dependency, hierarchy, author, and closing-PR connections. Validate the
+GraphQL response and fail if any nested connection exceeds the requested page so
+the importer cannot silently truncate relationships.
+
+**Impact:** Add Task 6.4b before retrying the live import. No repository file was
+written by the failed dry run.
+
+The GraphQL implementation succeeded against the live project. A redacted leak
+scan flagged one 40-character value in spine issue 53. Its issue context describes
+deployed Sepolia/Cardano-preview contract evidence, so the match is consistent with
+a public testnet address or transaction identifier rather than an AWS credential.
+The scanner did not expose the value.
+
+---
+
 ## 2026-08-31 — Repository baseline
 
 **Context:** Inspected the repository before choosing project conventions.

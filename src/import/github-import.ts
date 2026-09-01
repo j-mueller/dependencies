@@ -3,12 +3,12 @@ import { z } from "zod";
 import { parseTaskGraph } from "../model/task-graph";
 import type { Relationship, Task, TaskGraph } from "../model/task-graph";
 
-const issueReferenceSchema = z.object({
+export const issueReferenceSchema = z.object({
   number: z.number().int().positive(),
   url: z.url(),
 });
 
-const githubIssueSchema = z.object({
+export const githubIssueSchema = z.object({
   number: z.number().int().positive(),
   title: z.string().min(1),
   body: z.string().nullable(),
@@ -39,7 +39,7 @@ const githubIssueSchema = z.object({
 
 const githubIssuesSchema = z.array(githubIssueSchema);
 
-type GithubIssue = z.infer<typeof githubIssueSchema>;
+export type GithubIssue = z.infer<typeof githubIssueSchema>;
 type IssueReference = z.infer<typeof issueReferenceSchema>;
 
 export interface ImportGithubIssuesOptions {
@@ -47,6 +47,24 @@ export interface ImportGithubIssuesOptions {
   repository: string;
   input: unknown;
   importedAt: string;
+}
+
+export interface GithubIssueBatch {
+  repository: string;
+  input: unknown;
+}
+
+export interface UpsertGithubIssuesOptions {
+  existing: TaskGraph | undefined;
+  batches: readonly GithubIssueBatch[];
+  importedAt: string;
+  projectName: string;
+  sourceRepository?: string;
+}
+
+interface ParsedIssueBatch {
+  repository: string;
+  issues: GithubIssue[];
 }
 
 function taskId(repository: string, issueNumber: number): string {
@@ -176,36 +194,87 @@ export function importGithubIssues({
   input,
   importedAt,
 }: ImportGithubIssuesOptions): TaskGraph {
-  const issues = githubIssuesSchema.parse(input);
-  const existingTasks = new Map(existing?.tasks.map((task) => [task.id, task]));
-  const existingRelationships = new Map(
-    existing?.relationships.map((relationship) => [
+  return upsertGithubIssues({
+    existing,
+    batches: [{ repository, input }],
+    importedAt,
+    projectName: repository,
+    sourceRepository: repository,
+  });
+}
+
+function upsertTasks(
+  existingTasks: readonly Task[],
+  batches: readonly ParsedIssueBatch[],
+): Map<string, Task> {
+  const tasksById = new Map(existingTasks.map((task) => [task.id, task]));
+  for (const { issues, repository } of batches) {
+    for (const issue of issues) {
+      const id = taskId(repository, issue.number);
+      tasksById.set(id, mapTask(issue, repository, tasksById.get(id)));
+    }
+  }
+  return tasksById;
+}
+
+function upsertRelationships(
+  existingRelationships: readonly Relationship[],
+  batches: readonly ParsedIssueBatch[],
+  taskIds: ReadonlySet<string>,
+): Map<string, Relationship> {
+  const relationshipsById = new Map(
+    existingRelationships.map((relationship) => [
       relationship.id,
       relationship,
     ]),
   );
-  const tasks = issues.map((issue) =>
-    mapTask(
-      issue,
+  for (const { issues, repository } of batches) {
+    const importedRelationships = collectRelationships({
+      issues,
       repository,
-      existingTasks.get(taskId(repository, issue.number)),
-    ),
+      taskIds,
+      existingById: relationshipsById,
+    });
+    for (const relationship of importedRelationships) {
+      relationshipsById.set(relationship.id, relationship);
+    }
+  }
+  return relationshipsById;
+}
+
+export function upsertGithubIssues({
+  existing,
+  batches,
+  importedAt,
+  projectName,
+  sourceRepository,
+}: UpsertGithubIssuesOptions): TaskGraph {
+  const parsedBatches: ParsedIssueBatch[] = batches.map(
+    ({ repository, input }) => ({
+      repository,
+      issues: githubIssuesSchema.parse(input),
+    }),
   );
-  const importedTaskIds = new Set(tasks.map(({ id }) => id));
+  const tasksById = upsertTasks(existing?.tasks ?? [], parsedBatches);
+  const relationshipsById = upsertRelationships(
+    existing?.relationships ?? [],
+    parsedBatches,
+    new Set(tasksById.keys()),
+  );
+
+  const retainedSourceRepository =
+    sourceRepository ?? existing?.project.sourceRepository;
 
   return parseTaskGraph({
     schemaVersion: 1,
     project: {
-      name: existing?.project.name ?? repository,
-      sourceRepository: repository,
+      name: existing?.project.name ?? projectName,
+      ...(retainedSourceRepository === undefined
+        ? {}
+        : { sourceRepository: retainedSourceRepository }),
       importedAt,
     },
-    tasks,
-    relationships: collectRelationships({
-      issues,
-      repository,
-      taskIds: importedTaskIds,
-      existingById: existingRelationships,
-    }),
+    tasks: [...tasksById.values()],
+    relationships: [...relationshipsById.values()],
   });
 }

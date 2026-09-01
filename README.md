@@ -108,16 +108,27 @@ gh auth login
 npm run import:github -- OWNER/REPOSITORY
 ```
 
+To import every issue represented in an organization project, including issues
+from multiple repositories:
+
+```sh
+npm run import:github -- --project OWNER/PROJECT_NUMBER
+```
+
 The default output is `public/tasks.json`. Pass a second argument to write a
 different file:
 
 ```sh
 npm run import:github -- OWNER/REPOSITORY data/project.json
+npm run import:github -- --project OWNER/PROJECT_NUMBER data/project.json
 ```
 
-The importer reads issue titles, bodies, timestamps, states, authors, blocking
-relationships, parent/sub-issue relationships, and closing pull requests. It
-writes the output atomically after validating the complete graph.
+For project imports, the CLI discovers issue membership first and fetches each
+represented repository once. Draft project items are ignored because they have
+no GitHub issue identity. The importer reads issue titles, bodies, timestamps,
+states, authors, blocking relationships, parent/sub-issue relationships, and
+closing pull requests. It writes the output atomically after validating the
+complete graph.
 
 GitHub-owned fields refresh on every import. Existing project-local values are
 preserved by stable ID:
@@ -128,3 +139,5 @@ preserved by stable ID:
 
 New tasks default to one day, `internal`, and empty metadata. Edit those values
 in the JSON file after the first import. Re-running the importer retains them.
+The write is an upsert: matching tasks refresh, new tasks and relationships are
+added, and records absent from the current import remain unchanged.

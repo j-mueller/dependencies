@@ -78,12 +78,30 @@ metadata.
 - [x] Task 5.4: Review the finished change for correctness, simplicity, security,
       performance, and source-comment quality
 
+### Phase 6: Project import and non-destructive upsert [DONE]
+
+- [x] Task 6.1: Add failing tests for project target parsing, project membership,
+      multi-repository import, and non-destructive upserts →
+      `src/import/github-cli.test.ts`, `src/import/github-import.test.ts`
+- [x] Task 6.2: Implement explicit project targets and project item parsing →
+      `src/import/github-cli.ts`, `src/import/github-project.ts`
+- [x] Task 6.3: Implement multi-repository upserts that retain unrelated tasks and
+      relationships → `src/import/github-import.ts`
+- [x] Task 6.4: Update the importer entrypoint and documentation →
+      `scripts/import-github.ts`, `README.md`
+- [x] Task 6.4b: Replace unsupported `gh issue list` relationship fields with
+      batched GitHub GraphQL issue queries → `src/import/github-graphql.ts`,
+      `scripts/import-github.ts`, `src/import/*.test.ts`
+- [x] Task 6.5: Run all checks and import `realfi-co` project 4 into
+      `public/tasks.json`
+
 ## Dependencies
 
 - Phase 2 depends on the schema contract in Phase 1.
 - Phase 3 depends on the schema contract but can remain isolated from browser code.
 - Phase 4 depends on graph projection and ELK layout behavior.
 - Phase 5 begins after all implementation phases are green.
+- Phase 6 extends the importer after the initial UI feature commit.
 
 ## Acceptance Criteria
 
@@ -106,3 +124,10 @@ metadata.
 - [x] Re-import preserves local metadata for tasks and stable relationships.
 - [x] The production build is entirely static.
 - [x] Lint, strict typecheck, tests, build, and Nix flake checks pass.
+- [x] `--project OWNER/NUMBER` imports issues from every repository represented in
+      the project.
+- [x] Re-import updates GitHub-owned fields on matching task IDs.
+- [x] Re-import retains local task fields, relationship metadata, unrelated tasks,
+      and unrelated relationships.
+- [x] The Cross Chain project imports successfully without discarding existing JSON
+      records.

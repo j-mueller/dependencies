@@ -85,3 +85,47 @@
 - Phase 3: DONE
 - Phase 4: DONE
 - Phase 5: DONE
+
+## Session: 2026-08-31 — Project importer extension
+
+### Actions
+
+1. Committed the initial task graph application as `faa9944`.
+2. Resolved “Cross Chain” to `realfi-co` organization project 4.
+3. Inspected project membership → found 86 issues across two repositories.
+4. Ran the baseline suite → PASS (28 tests).
+5. Added project-target, project-membership, and non-destructive multi-repository
+   upsert tests → RED with six failures for the missing behavior.
+6. Implemented project target parsing and project membership validation → focused
+   tests PASS (14 tests). Full typecheck remains red until Tasks 6.3 and 6.4 add
+   the upsert export and consume the new target union.
+7. Implemented non-destructive multi-repository upserts → focused importer tests
+   PASS (5 tests). Typecheck now fails only where the executable still expects the
+   old repository-only argument shape.
+8. Wired project discovery, repository filtering, and upsert batches into the CLI;
+   documented project syntax and upsert behavior → focused tests, lint, and strict
+   typecheck PASS.
+9. Ran all 38 tests, build, lint, typecheck, and Nix checks → PASS.
+10. Ran a live project import to `/tmp` → failed safely because `gh issue list`
+    rejects relationship fields; no output was written. Confirmed the fields exist
+    on GitHub's GraphQL `Issue` type and added Task 6.4b.
+11. Replaced unsupported fields with validated batched GraphQL issue queries → the
+    live dry run imported 75 issues and 9 relationships from project 4.
+12. Upserted project 4 into `public/tasks.json` twice → counts remain stable at 81
+    unique tasks and 15 unique relationships; all six sample tasks and their local
+    metadata remain.
+13. Completed the structured review → confirmed validated external inputs,
+    non-shell GitHub execution, bounded GraphQL batching, and fail-closed nested
+    relationship pagination.
+14. Ran the final suite → PASS (41 tests, lint, strict typecheck, build, audit, and
+    Nix checks).
+15. Ran a redacted leak scan → one likely false positive in testnet transaction
+    evidence; no credential value was exposed.
+
+### Status
+
+- Phase 6: DONE
+
+### Status
+
+- Phase 6: IN PROGRESS (Task 6.1 next)

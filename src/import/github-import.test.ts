@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import fixture from "./fixtures/issues.json";
-import { importGithubIssues } from "./github-import";
+import { importGithubIssues, upsertGithubIssues } from "./github-import";
 import type { Relationship, Task } from "../model/task-graph";
 
 const importedAt = "2026-08-31T12:00:00Z";
@@ -101,6 +101,53 @@ describe("importGithubIssues", () => {
     expect(
       findById<Relationship>(refreshed.relationships, relationship.id).metadata,
     ).toEqual({ confidence: 0.6 });
+  });
+
+  it("upserts multiple repositories without discarding existing records", () => {
+    const existing = importGithubIssues({
+      existing: undefined,
+      repository: "acme/roadmap",
+      input: fixture,
+      importedAt,
+    });
+    existing.project.name = "Acme roadmap";
+    const updatedIssue = {
+      ...fixture[0],
+      title: "Launch the updated roadmap",
+      blocking: [],
+      subIssues: [],
+    };
+    const otherIssue = {
+      ...fixture[0],
+      number: 9,
+      title: "Coordinate another repository",
+      url: "https://github.com/acme/platform/issues/9",
+      blocking: [],
+      subIssues: [],
+    };
+
+    const refreshed = upsertGithubIssues({
+      existing,
+      batches: [
+        { repository: "acme/roadmap", input: [updatedIssue] },
+        { repository: "acme/platform", input: [otherIssue] },
+      ],
+      importedAt: "2026-08-31T13:00:00Z",
+      projectName: "Cross-repository roadmap",
+    });
+
+    expect(refreshed.tasks).toHaveLength(4);
+    expect(findById<Task>(refreshed.tasks, "github:acme/roadmap#1").title).toBe(
+      "Launch the updated roadmap",
+    );
+    expect(findById<Task>(refreshed.tasks, "github:acme/roadmap#2").title).toBe(
+      "Build the graph",
+    );
+    expect(
+      findById<Task>(refreshed.tasks, "github:acme/platform#9").title,
+    ).toBe("Coordinate another repository");
+    expect(refreshed.relationships).toHaveLength(3);
+    expect(refreshed.project.name).toBe("Acme roadmap");
   });
 
   it("rejects malformed GitHub CLI output at the boundary", () => {
