@@ -27,7 +27,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -72,7 +74,7 @@ input {
   text-transform: uppercase;
 }
 
-.file-button,
+.primary-button,
 .primary-link {
   display: inline-flex;
   cursor: pointer;
@@ -90,24 +92,114 @@ input {
     transform 150ms ease;
 }
 
-.file-button:hover,
+.primary-button:hover,
 .primary-link:hover {
   background: #312e81;
   transform: translateY(-1px);
 }
 
-.file-button:focus-within {
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.icon-button:focus-visible {
   outline: 2px solid #6366f1;
   outline-offset: 3px;
 }
 
-.file-error {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-bottom: 1px solid #fecdd3;
+.primary-button:disabled,
+.secondary-button:disabled,
+.icon-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+  transform: none;
+}
+
+.secondary-button,
+.icon-button {
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  background: white;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.secondary-button {
+  padding: 0.65rem 0.9rem;
+}
+
+.icon-button {
+  display: grid;
+  height: 2.25rem;
+  width: 2.25rem;
+  place-items: center;
+}
+
+.secondary-button:hover,
+.icon-button:hover {
+  border-color: #a5b4fc;
+  color: #4338ca;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  background: rgb(15 23 42 / 55%);
+  padding: 1rem;
+  backdrop-filter: blur(5px);
+}
+
+.task-dialog {
+  width: min(100%, 36rem);
+  border: 1px solid #cbd5e1;
+  border-radius: 1rem;
+  background: white;
+  padding: 1.5rem;
+  box-shadow: 0 24px 64px rgb(15 23 42 / 28%);
+}
+
+.form-field {
+  display: grid;
+  gap: 0.4rem;
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.6rem;
+  background: white;
+  padding: 0.65rem 0.75rem;
+  color: #0f172a;
+  font-size: 0.86rem;
+  font-weight: 450;
+  outline: none;
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgb(99 102 241 / 16%);
+}
+
+.dialog-error {
+  border: 1px solid #fecdd3;
+  border-radius: 0.6rem;
   background: #fff1f2;
-  padding: 0.7rem 1.25rem;
+  padding: 0.65rem 0.75rem;
   color: #be123c;
   font-size: 0.8rem;
 }

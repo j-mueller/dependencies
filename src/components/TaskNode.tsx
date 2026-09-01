@@ -29,6 +29,10 @@ const statusLabels: Record<Task["status"], string> = {
 
 export function TaskNode({ data }: NodeProps<TaskFlowNode>) {
   const { task } = data;
+  const sourceLabel =
+    task.source.provider === "github"
+      ? `${task.source.repository} #${task.source.issueNumber}`
+      : "Local task";
 
   return (
     <article
@@ -38,7 +42,7 @@ export function TaskNode({ data }: NodeProps<TaskFlowNode>) {
       <Handle type="target" position={Position.Left} isConnectable={false} />
       <div className="flex items-center justify-between gap-3">
         <span className="font-mono text-[0.68rem] tracking-[0.16em] text-slate-500 uppercase">
-          {task.source.repository} #{task.source.issueNumber}
+          {sourceLabel}
         </span>
         <span
           className={`rounded-full px-2 py-1 text-[0.65rem] font-semibold tracking-wide uppercase ${statusStyles[task.status]}`}

@@ -1,12 +1,15 @@
 import { AlertCircle, LoaderCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ChangeEvent } from "react";
 
+import { createTask, loadTaskGraph } from "./api/task-api";
+import { CreateTaskDialog } from "./components/CreateTaskDialog";
 import { GraphLegend, GraphToolbar } from "./components/GraphToolbar";
 import { TaskDetails } from "./components/TaskDetails";
 import { TaskGraph } from "./components/TaskGraph";
-import { parseTaskGraph } from "./model/task-graph";
-import type { TaskGraph as TaskGraphModel } from "./model/task-graph";
+import type {
+  CreateTaskInput,
+  TaskGraph as TaskGraphModel,
+} from "./model/task-graph";
 
 type GraphResource =
   | { kind: "loading" }
@@ -23,19 +26,15 @@ export default function App() {
     new Set(),
   );
   const [selectedTaskId, setSelectedTaskId] = useState<string>();
-  const [fileError, setFileError] = useState<string>();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string>();
 
   useEffect(() => {
     const controller = new AbortController();
     const loadGraph = async (): Promise<void> => {
       try {
-        const response = await fetch("/tasks.json", {
-          signal: controller.signal,
-        });
-        if (!response.ok) {
-          throw new Error(`Could not load tasks.json (${response.status})`);
-        }
-        const graph = parseTaskGraph(await response.json());
+        const graph = await loadTaskGraph(controller.signal);
         setResource({ kind: "ready", graph });
       } catch (error: unknown) {
         if (!controller.signal.aborted) {
@@ -70,21 +69,18 @@ export default function App() {
     return resource.graph.tasks.find(({ id }) => id === selectedTaskId);
   }, [resource, selectedTaskId]);
 
-  const loadFile = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.item(0);
-    if (file === null || file === undefined) {
-      return;
-    }
+  const submitTask = useCallback(async (input: CreateTaskInput) => {
+    setIsCreating(true);
+    setCreateError(undefined);
     try {
-      const graph = parseTaskGraph(JSON.parse(await file.text()));
+      const { graph, task } = await createTask(input);
       setResource({ kind: "ready", graph });
-      setExpandedTaskIds(new Set());
-      setSelectedTaskId(undefined);
-      setFileError(undefined);
-    } catch (error) {
-      setFileError(`Choose a valid JSON task graph. ${errorMessage(error)}`);
+      setSelectedTaskId(task.id);
+      setIsCreateOpen(false);
+    } catch (error: unknown) {
+      setCreateError(errorMessage(error));
     } finally {
-      event.target.value = "";
+      setIsCreating(false);
     }
   }, []);
 
@@ -118,14 +114,11 @@ export default function App() {
         projectName={resource.graph.project.name}
         taskCount={resource.graph.tasks.length}
         relationshipCount={resource.graph.relationships.length}
-        onFileChange={(event) => void loadFile(event)}
+        onCreateTask={() => {
+          setCreateError(undefined);
+          setIsCreateOpen(true);
+        }}
       />
-      {fileError === undefined ? null : (
-        <div className="file-error" role="alert">
-          <AlertCircle aria-hidden="true" size={16} />
-          {fileError}
-        </div>
-      )}
       <div className="workspace">
         <section className="graph-panel">
           <GraphLegend />
@@ -139,6 +132,14 @@ export default function App() {
         </section>
         <TaskDetails task={selectedTask} />
       </div>
+      {isCreateOpen ? (
+        <CreateTaskDialog
+          error={createError}
+          isSubmitting={isCreating}
+          onClose={() => setIsCreateOpen(false)}
+          onCreate={(input) => void submitTask(input)}
+        />
+      ) : null}
     </main>
   );
 }

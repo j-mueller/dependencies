@@ -95,6 +95,23 @@ metadata.
 - [x] Task 6.5: Run all checks and import `realfi-co` project 4 into
       `public/tasks.json`
 
+### Phase 7: Backend-owned task creation [DONE]
+
+- [x] Task 7.1: Add failing tests for local task construction, atomic graph
+      persistence, and HTTP task creation → `src/model/task-graph.test.ts`,
+      `server/*.test.ts`
+- [x] Task 7.2: Extend the graph contract with local task sources and implement
+      the JSON graph store → `src/model/task-graph.ts`, `server/graph-store.ts`
+- [x] Task 7.3: Implement the production Fastify server and task API →
+      `server/app.ts`, `server/index.ts`, `tsconfig.server.json`
+- [x] Task 7.4: Add the accessible task form and connect the frontend to the API
+      → `src/components/CreateTaskDialog.tsx`, `src/App.tsx`,
+      `src/components/GraphToolbar.tsx`
+- [x] Task 7.5: Document deployment and run all unit, integration, accessibility,
+      build, and Nix checks → `README.md`
+- [x] Task 7.6: Review the backend boundary, write safety, UI behavior, and
+      finished diff
+
 ## Dependencies
 
 - Phase 2 depends on the schema contract in Phase 1.
@@ -102,6 +119,8 @@ metadata.
 - Phase 4 depends on graph projection and ELK layout behavior.
 - Phase 5 begins after all implementation phases are green.
 - Phase 6 extends the importer after the initial UI feature commit.
+- Phase 7 depends on the graph contract and replaces browser-only graph loading
+  with a backend-owned JSON persistence boundary.
 
 ## Acceptance Criteria
 
@@ -116,13 +135,15 @@ metadata.
 - [x] Selecting a task shows title, description, creation time, status, creator,
       associated closing pull requests, duration, execution type, source link, and
       local metadata.
-- [x] A user can load another conforming JSON file without a server.
+- [x] Superseded by Phase 7: the backend owns the configured JSON file instead of
+      loading arbitrary browser-local files.
 - [x] Invalid JSON, missing references, duplicate IDs, invalid durations, and graph
       cycles produce clear errors instead of a broken canvas.
 - [x] The GitHub import command imports issues, blocked-by relationships,
       sub-issues, parents, and closing pull requests through `gh`.
 - [x] Re-import preserves local metadata for tasks and stable relationships.
-- [x] The production build is entirely static.
+- [x] Superseded by Phase 7: production runs one Node service that serves the SPA
+      and persistence API.
 - [x] Lint, strict typecheck, tests, build, and Nix flake checks pass.
 - [x] `--project OWNER/NUMBER` imports issues from every repository represented in
       the project.
@@ -131,3 +152,11 @@ metadata.
       and unrelated relationships.
 - [x] The Cross Chain project imports successfully without discarding existing JSON
       records.
+- [x] The production backend serves the built React application and current graph.
+- [x] A user can create a local task from the UI with title, description, status,
+      creator, duration, and execution type.
+- [x] Created tasks receive stable local IDs and are validated before persistence.
+- [x] The backend writes the complete graph atomically to the configured JSON file.
+- [x] Failed validation or persistence leaves the JSON file unchanged and returns a
+      clear API/UI error.
+- [x] Development uses a Vite proxy while production runs one Node process.

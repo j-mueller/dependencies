@@ -69,6 +69,27 @@ describe("parseTaskGraph", () => {
     expect(result).toEqual(validGraph);
   });
 
+  it("accepts a locally-created task without a GitHub identity", () => {
+    const graph = parseTaskGraph(validGraph);
+    graph.tasks.push({
+      id: "local:9ca29d0a-c37d-49f7-98ed-4d8379776c69",
+      source: { provider: "local" },
+      title: "Write release notes",
+      description: "Summarize the delivered changes.",
+      createdAt: "2026-09-01T08:00:00Z",
+      status: "open",
+      createdBy: { login: "jann" },
+      pullRequests: [],
+      duration: 0.5,
+      executionType: "internal",
+      metadata: {},
+    });
+
+    expect(parseTaskGraph(graph).tasks.at(-1)?.source).toEqual({
+      provider: "local",
+    });
+  });
+
   it("rejects negative durations", () => {
     const graph = parseTaskGraph(validGraph);
     itemAt(graph.tasks, 0).duration = -1;
@@ -78,8 +99,12 @@ describe("parseTaskGraph", () => {
 
   it("rejects links with executable URL schemes", () => {
     const graph = parseTaskGraph(validGraph);
+    const { source } = itemAt(graph.tasks, 0);
+    if (source.provider !== "github") {
+      throw new Error("Expected a GitHub task fixture");
+    }
     // oxlint-disable-next-line no-script-url -- this unsafe scheme is the regression input.
-    itemAt(graph.tasks, 0).source.url = "javascript:alert(1)";
+    source.url = "javascript:alert(1)";
 
     expect(() => parseTaskGraph(graph)).toThrow(/http/iu);
   });

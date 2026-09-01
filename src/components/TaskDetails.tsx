@@ -40,7 +40,11 @@ export function TaskDetails({ task }: TaskDetailsProps) {
   return (
     <aside className="details-panel" aria-label="Task details">
       <div className="flex items-center justify-between gap-4">
-        <p className="eyebrow">Issue #{task.source.issueNumber}</p>
+        <p className="eyebrow">
+          {task.source.provider === "github"
+            ? `Issue #${task.source.issueNumber}`
+            : "Local task"}
+        </p>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
           {statusLabels[task.status]}
         </span>
@@ -75,13 +79,20 @@ export function TaskDetails({ task }: TaskDetailsProps) {
         <div>
           <dt className="detail-label">Created by</dt>
           <dd className="detail-value">
-            <a
-              className="inline-flex items-center gap-1 hover:text-indigo-700"
-              href={task.createdBy.url}
-            >
-              <CircleUserRound aria-hidden="true" size={14} />
-              {task.createdBy.login}
-            </a>
+            {task.createdBy.url === undefined ? (
+              <span className="inline-flex items-center gap-1">
+                <CircleUserRound aria-hidden="true" size={14} />
+                {task.createdBy.login}
+              </span>
+            ) : (
+              <a
+                className="inline-flex items-center gap-1 hover:text-indigo-700"
+                href={task.createdBy.url}
+              >
+                <CircleUserRound aria-hidden="true" size={14} />
+                {task.createdBy.login}
+              </a>
+            )}
           </dd>
         </div>
       </dl>
@@ -129,10 +140,12 @@ export function TaskDetails({ task }: TaskDetailsProps) {
         )}
       </section>
 
-      <a className="primary-link mt-7" href={task.source.url}>
-        Open on GitHub
-        <ArrowUpRight aria-hidden="true" size={16} />
-      </a>
+      {task.source.provider === "github" ? (
+        <a className="primary-link mt-7" href={task.source.url}>
+          Open on GitHub
+          <ArrowUpRight aria-hidden="true" size={16} />
+        </a>
+      ) : null}
     </aside>
   );
 }

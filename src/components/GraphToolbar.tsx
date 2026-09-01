@@ -1,18 +1,17 @@
-import { FileJson2, Network } from "lucide-react";
-import type { ChangeEvent } from "react";
+import { Network, Plus } from "lucide-react";
 
 interface GraphToolbarProps {
   projectName: string;
   taskCount: number;
   relationshipCount: number;
-  onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onCreateTask: () => void;
 }
 
 export function GraphToolbar({
   projectName,
   taskCount,
   relationshipCount,
-  onFileChange,
+  onCreateTask,
 }: GraphToolbarProps) {
   return (
     <header className="toolbar">
@@ -38,17 +37,10 @@ export function GraphToolbar({
             links
           </span>
         </div>
-        <label className="file-button">
-          <FileJson2 aria-hidden="true" size={16} />
-          Open JSON
-          <input
-            className="sr-only"
-            type="file"
-            accept="application/json,.json"
-            aria-label="Open JSON file"
-            onChange={onFileChange}
-          />
-        </label>
+        <button className="primary-button" type="button" onClick={onCreateTask}>
+          <Plus aria-hidden="true" size={16} />
+          New task
+        </button>
       </div>
     </header>
   );

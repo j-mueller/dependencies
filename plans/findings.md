@@ -1,5 +1,42 @@
 # Findings
 
+## 2026-09-01 — Backend persistence boundary
+
+**Context:** Creating a task must update the repository-side JSON file. A browser
+reached through an SSH tunnel cannot write that remote file, and browser file APIs
+would write to the user's local machine instead.
+
+**Finding:** Fastify 5 supports Node.js 20 and newer. `@fastify/static` 8 and newer
+is compatible with Fastify 5; the current releases are Fastify 5.12.1 and
+`@fastify/static` 10.1.3. The official static plugin documents serving a Vite SPA.
+
+**Decision:** Add one production Node service. It owns `public/tasks.json`, serves
+the built SPA, and exposes only graph read and task-create routes. Keep Vite as a
+development-only frontend server with an API proxy. Use an atomic temporary-file
+rename for every graph write.
+
+**Impact:** The JSON graph remains the source of truth and the GitHub importer
+remains compatible. Production is no longer a static-only deployment, but it
+still requires no database or separate application services.
+
+**Security boundary:** The service binds to `127.0.0.1` by default and has no
+application authentication. Personal access remains suitable through SSH
+forwarding. A shared-network deployment requires an authenticated reverse proxy.
+Internal failures are logged server-side and return a generic API message.
+
+**Review:** Task input validation lives in the graph store so direct callers and
+HTTP callers share one trusted boundary. Reads validate the entire graph. HTTP
+writes are serialized inside the process and use a same-directory temporary file
+plus atomic rename. The existing importer remains a separate maintenance writer
+and should not run concurrently with UI task creation.
+
+**UI discovery:** The local shadcn catalog identifies Dialog, Input, Select,
+Textarea, and Button as the relevant primitives. No shadcn MCP is configured and
+the project has no shadcn runtime, so the form will use semantic React controls
+and the existing Tailwind visual language without adding a component framework.
+
+---
+
 ## 2026-08-31 — Cross Chain project import
 
 **Context:** The requested source is the organization-level GitHub Project named

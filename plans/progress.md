@@ -1,5 +1,69 @@
 # Progress
 
+## Session: 2026-09-01 — Backend task creation
+
+### Actions
+
+1. Confirmed that direct repository-file persistence is impossible from the
+   static browser client, especially through an SSH tunnel.
+2. Agreed with the user to introduce a proper backend rather than a Vite-only
+   development endpoint.
+3. Reviewed the existing graph contract, UI, tests, build configuration, and
+   applicable architecture, React, TypeScript, TDD, and component guidance.
+4. Chose a single Fastify production service with atomic JSON persistence and a
+   Vite development proxy.
+5. Ran the green baseline → PASS (41 tests).
+6. Added schema, graph-store, and HTTP integration tests → RED for the missing
+   local source and backend modules.
+7. Implemented local task validation and a serialized atomic JSON graph store →
+   focused tests PASS (15 tests across three files).
+8. Implemented graph-read, task-create, validation-error, and SPA fallback routes
+   in a production Fastify application → focused integration tests PASS.
+9. Added failing UI tests for backend loading, creation, selection, and save errors
+   → RED for the static data path and missing task form.
+10. Added the task dialog, backend API client, local-source rendering, and toolbar
+    action → component tests PASS (6 tests, including open-dialog axe scan).
+11. Added a failing integration test for internal error disclosure, then installed
+    a generic production error boundary → server tests PASS (5 tests).
+12. Compiled and smoke-tested the production service against a temporary graph →
+    graph read returned 81 tasks, task creation returned 201 and persisted task 82,
+    and SPA fallback served `index.html`. The temporary graph was removed.
+13. Ran the first full check → strict TypeScript rejected access to Fastify's
+    `unknown` error value; added explicit status and message narrowing.
+14. Completed the structured review → centralized task validation in the graph
+    store, removed dead styles and test indirection, documented the loopback-only
+    unauthenticated security boundary, and found no remaining critical or high
+    issues.
+15. Ran the final check inside the Nix shell with Node.js 22.23.2 → PASS (format,
+    lint, strict typecheck, 52 tests, client build, and server build). Dependency
+    audit and all-system Nix flake checks also PASS.
+16. Ran a headless Chromium smoke check against a temporary graph → created a
+    local task through the UI, persisted it through the real API, selected the new
+    node, and observed no browser console or page errors. Removed all temporary
+    test artifacts and restarted the live instance against the imported graph.
+
+### Files Modified
+
+- `server/` — production Fastify app, atomic graph store, and integration tests.
+- `src/api/task-api.ts` — validated browser API boundary.
+- `src/components/CreateTaskDialog.tsx` — accessible local task form.
+- `src/App.tsx`, `src/components/*.tsx`, `src/index.css` — backend loading,
+  creation flow, local-source rendering, and UI styles.
+- `src/model/task-graph.ts` — local source and create-task contracts.
+- `package.json`, `vite.config.ts`, `tsconfig*.json` — production build, service,
+  and development proxy configuration.
+- `README.md` — development, production, persistence, and security documentation.
+
+### Status at End of Session
+
+- Phase 7: DONE
+
+### Status at End of Checkpoint
+
+- Phase 7: IN PROGRESS (Task 7.1 next)
+
+---
+
 ## Session: 2026-08-31
 
 ### Actions

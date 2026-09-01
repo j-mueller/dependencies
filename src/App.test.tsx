@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe, toHaveNoViolations } from "jest-axe";
 
@@ -166,9 +166,9 @@ describe("App", () => {
     expect(screen.getByText("ghost")).toBeVisible();
   });
 
-  it("reports invalid local JSON without replacing the current graph", async () => {
-    const user = userEvent.setup();
+  it("loads the graph from the backend API", async () => {
     render(<App />);
+
     expect(
       await screen.findByRole("button", {
         name: "Select Launch roadmap",
@@ -176,27 +176,99 @@ describe("App", () => {
       }),
     ).toBeInTheDocument();
 
-    await user.upload(
-      screen.getByLabelText("Open JSON file"),
-      new File(["not json"], "broken.json", { type: "application/json" }),
-    );
+    expect(fetch).toHaveBeenCalledWith("/api/graph", expect.any(Object));
+  });
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/valid JSON/iu);
+  it("creates a task through the API and selects its new graph node", async () => {
+    const user = userEvent.setup();
+    const createdTask = {
+      id: "local:9ca29d0a-c37d-49f7-98ed-4d8379776c69",
+      source: { provider: "local" },
+      title: "Write release notes",
+      description: "Summarize the delivered changes.",
+      createdAt: "2026-09-01T08:00:00Z",
+      status: "open",
+      createdBy: { login: "jann" },
+      pullRequests: [],
+      duration: 0.5,
+      executionType: "internal",
+      metadata: {},
+    };
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(Response.json(graph))
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            task: createdTask,
+            graph: { ...graph, tasks: [...graph.tasks, createdTask] },
+          },
+          { status: 201 },
+        ),
+      );
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "New task" }));
+    await user.type(screen.getByLabelText("Title"), "Write release notes");
+    await user.type(
+      screen.getByLabelText("Description"),
+      "Summarize the delivered changes.",
+    );
+    await user.type(screen.getByLabelText("Created by"), "jann");
+    await user.clear(screen.getByLabelText("Duration (days)"));
+    await user.type(screen.getByLabelText("Duration (days)"), "0.5");
+    await user.click(screen.getByRole("button", { name: "Create task" }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenLastCalledWith(
+        "/api/tasks",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            title: "Write release notes",
+            description: "Summarize the delivered changes.",
+            status: "open",
+            createdBy: "jann",
+            duration: 0.5,
+            executionType: "internal",
+          }),
+        }),
+      ),
+    );
     expect(
-      screen.getByRole("button", {
-        name: "Select Launch roadmap",
-        hidden: true,
-      }),
-    ).toBeInTheDocument();
+      await screen.findByRole("heading", { name: "Write release notes" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("keeps the task form open when creation fails", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(Response.json(graph))
+      .mockResolvedValueOnce(
+        Response.json({ error: "Could not write task graph" }, { status: 500 }),
+      );
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "New task" }));
+    await user.type(screen.getByLabelText("Title"), "Write release notes");
+    await user.type(screen.getByLabelText("Created by"), "jann");
+    await user.click(screen.getByRole("button", { name: "Create task" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not write task graph",
+    );
+    expect(screen.getByRole("dialog")).toBeVisible();
   });
 
   it("has no detectable accessibility violations", async () => {
+    const user = userEvent.setup();
     const { container } = render(<App />);
 
     await screen.findByRole("button", {
       name: "Select Launch roadmap",
       hidden: true,
     });
+    await user.click(screen.getByRole("button", { name: "New task" }));
 
     expect(await axe(container)).toHaveNoViolations();
   });

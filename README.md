@@ -1,11 +1,13 @@
 # Task Atlas
 
-Task Atlas is a static React application for exploring GitHub issues as a task
-dependency graph. It displays top-level tasks first, expands subtask hierarchies
-on demand, and projects relationships from hidden children onto their nearest
-visible ancestors. ELK provides the layered graph layout.
+Task Atlas is a React and Node application for exploring GitHub issues and local
+tasks as a dependency graph. It displays top-level tasks first, expands subtask
+hierarchies on demand, and projects relationships from hidden children onto their
+nearest visible ancestors. ELK provides the layered graph layout.
 
-The browser reads one JSON file. It needs no server, database, or GitHub token.
+The Node service owns one JSON file and serves both the API and the production
+frontend. It requires no database. GitHub access remains isolated to the local
+import command and its existing `gh` authentication.
 
 ## Run locally
 
@@ -17,8 +19,10 @@ npm install
 npm run dev
 ```
 
-Vite serves the sample graph from `public/tasks.json`. Use **Open JSON** in the
-toolbar to inspect another conforming file without replacing the sample on disk.
+This starts the API on `http://127.0.0.1:3000` and Vite on
+`http://127.0.0.1:5199`. Open the Vite URL during development. It proxies `/api`
+requests to the backend. **New task** creates a project-local task and persists
+the complete validated graph to `public/tasks.json`.
 
 Run all local quality gates with:
 
@@ -26,7 +30,29 @@ Run all local quality gates with:
 npm run check
 ```
 
-`npm run build` produces the deployable static site in `dist/`.
+Build and run the production service with:
+
+```sh
+npm run build
+npm start
+```
+
+The production service listens on `127.0.0.1:3000` and serves the compiled SPA
+from `dist/`. Configure it with these environment variables:
+
+- `HOST`: listen address. Keep the default for local use and SSH forwarding.
+- `PORT`: listen port. Defaults to `3000`.
+- `TASK_GRAPH_PATH`: JSON graph path. Defaults to `public/tasks.json`.
+- `STATIC_ROOT`: compiled frontend directory. Defaults to `dist`.
+
+The API validates graph reads and task writes. It serializes concurrent task
+creations within the service and replaces the JSON file with an atomic rename, so
+clients never observe a partially written graph.
+
+The service intentionally defaults to the loopback interface and does not include
+authentication. Keep it behind SSH forwarding for personal use. Add an
+authenticated reverse proxy before binding it to a shared network. The service
+process needs read and write access to `TASK_GRAPH_PATH` and its parent directory.
 
 ## JSON format
 
@@ -73,6 +99,24 @@ Task status is `open`, `completed`, or `not-planned`. Execution type is
 `internal` when a known resource under project control can do the work, or
 `external` when the project must wait for an outside event or party. Task and
 relationship `metadata` values may contain any JSON object content.
+
+Tasks created in the UI use a local source instead of a GitHub issue identity:
+
+```json
+{
+  "id": "local:9ca29d0a-c37d-49f7-98ed-4d8379776c69",
+  "source": { "provider": "local" },
+  "title": "Write release notes",
+  "description": "Summarize the delivered changes.",
+  "createdAt": "2026-09-01T08:00:00.000Z",
+  "status": "open",
+  "createdBy": { "login": "jann" },
+  "pullRequests": [],
+  "duration": 0.5,
+  "executionType": "internal",
+  "metadata": {}
+}
+```
 
 Every relationship has a stable ID, a `kind`, two task IDs, and local metadata:
 

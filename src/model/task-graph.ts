@@ -16,9 +16,18 @@ const githubSourceSchema = z.object({
   url: webUrlSchema,
 });
 
+const localSourceSchema = z.object({
+  provider: z.literal("local"),
+});
+
+const taskSourceSchema = z.discriminatedUnion("provider", [
+  githubSourceSchema,
+  localSourceSchema,
+]);
+
 const actorSchema = z.object({
   login: z.string().min(1),
-  url: webUrlSchema,
+  url: webUrlSchema.optional(),
   avatarUrl: webUrlSchema.optional(),
 });
 
@@ -31,7 +40,7 @@ const pullRequestSchema = z.object({
 
 export const taskSchema = z.object({
   id: z.string().min(1),
-  source: githubSourceSchema,
+  source: taskSourceSchema,
   title: z.string().min(1),
   description: z.string(),
   createdAt: z.iso.datetime({ offset: true }),
@@ -41,6 +50,15 @@ export const taskSchema = z.object({
   duration: z.number().nonnegative(),
   executionType: z.enum(["internal", "external"]),
   metadata: metadataSchema,
+});
+
+export const createTaskInputSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(20_000),
+  status: z.enum(["open", "completed", "not-planned"]),
+  createdBy: z.string().trim().min(1).max(100),
+  duration: z.number().nonnegative().finite(),
+  executionType: z.enum(["internal", "external"]),
 });
 
 export const relationshipSchema = z.object({
@@ -66,6 +84,7 @@ const baseTaskGraphSchema = z.object({
 });
 
 export type Task = z.infer<typeof taskSchema>;
+export type CreateTaskInput = z.infer<typeof createTaskInputSchema>;
 export type Relationship = z.infer<typeof relationshipSchema>;
 export type TaskGraph = z.infer<typeof baseTaskGraphSchema>;
 export type RelationshipKind = Relationship["kind"];
@@ -178,6 +197,11 @@ function validateGraph(graph: TaskGraph, context: z.core.$RefinementCtx): void {
 }
 
 export const taskGraphSchema = baseTaskGraphSchema.superRefine(validateGraph);
+
+export const createTaskResponseSchema = z.object({
+  graph: taskGraphSchema,
+  task: taskSchema,
+});
 
 export function parseTaskGraph(input: unknown): TaskGraph {
   return taskGraphSchema.parse(input);
