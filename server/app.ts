@@ -62,6 +62,26 @@ function registerTaskUpdateRoute(
   );
 }
 
+function registerSubtaskRoute(app: FastifyInstance, store: GraphStore): void {
+  app.post<{ Params: { taskId: string } }>(
+    "/api/tasks/:taskId/subtasks",
+    async (request, reply) => {
+      try {
+        const result = await store.createSubtask({
+          parentId: request.params.taskId,
+          task: request.body,
+        });
+        return reply.code(201).send(result);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return sendValidationError(reply, "Invalid subtask", error);
+        }
+        throw error;
+      }
+    },
+  );
+}
+
 function registerApiRoutes(app: FastifyInstance, store: GraphStore): void {
   app.get("/api/graph", (_request, reply) => {
     reply.header("cache-control", "no-store");
@@ -117,6 +137,7 @@ function registerApiRoutes(app: FastifyInstance, store: GraphStore): void {
     },
   );
 
+  registerSubtaskRoute(app, store);
   registerTaskUpdateRoute(app, store);
 }
 

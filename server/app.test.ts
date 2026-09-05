@@ -81,6 +81,55 @@ describe("Task Atlas API", () => {
     await app.close();
   });
 
+  it("creates a subtask and relationship through one API request", async () => {
+    const fixture = await createFixture();
+    const app = await buildApp(fixture);
+    const parentResponse = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        title: "Prepare release",
+        description: "",
+        status: "open",
+        createdBy: "jann",
+        duration: 1,
+        executionType: "internal",
+      },
+    });
+    const parentId = parentResponse.json().task.id as string;
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/tasks/${encodeURIComponent(parentId)}/subtasks`,
+      payload: {
+        title: "Write release notes",
+        description: "Summarize the changes.",
+        status: "open",
+        createdBy: "jann",
+        duration: 0.5,
+        executionType: "internal",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      task: { title: "Write release notes" },
+      relationship: {
+        kind: "subtask-of",
+        source: response.json().task.id,
+        target: parentId,
+      },
+      graph: {
+        tasks: [{ id: parentId }, { title: "Write release notes" }],
+        relationships: [{ kind: "subtask-of", target: parentId }],
+      },
+    });
+    expect(JSON.parse(await readFile(fixture.dataPath, "utf8"))).toEqual(
+      response.json().graph,
+    );
+    await app.close();
+  });
+
   it("returns a validation error without writing invalid input", async () => {
     const fixture = await createFixture();
     const original = await readFile(fixture.dataPath, "utf8");

@@ -1,8 +1,8 @@
-import { AlertCircle, LoaderCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   createRequiredFor,
+  createSubtask,
   createTask,
   loadTaskGraph,
   updateTask,
@@ -10,6 +10,7 @@ import {
 import { CreateTaskDialog } from "./components/CreateTaskDialog";
 import { DeleteConfirmationDialog } from "./components/DeleteConfirmationDialog";
 import { GraphLegend, GraphToolbar } from "./components/GraphToolbar";
+import { GraphLoadState } from "./components/GraphLoadState";
 import { SelectionDetails } from "./components/SelectionDetails";
 import type { GraphSelection } from "./components/SelectionDetails";
 import { TaskGraph } from "./components/TaskGraph";
@@ -23,6 +24,9 @@ import type {
 } from "./model/task-graph";
 
 type PendingTaskUpdate = TaskStatus | "execution-type";
+
+type CreateTarget =
+  { kind: "task" } | { kind: "subtask"; parentTaskId: string };
 
 type GraphResource =
   | { kind: "loading" }
@@ -52,7 +56,7 @@ function TaskWorkspace({ initialGraph }: { initialGraph: TaskGraphModel }) {
     new Set(),
   );
   const [selection, setSelection] = useState<GraphSelection>();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createTarget, setCreateTarget] = useState<CreateTarget>();
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string>();
   const [relationshipError, setRelationshipError] = useState<string>();
@@ -90,20 +94,34 @@ function TaskWorkspace({ initialGraph }: { initialGraph: TaskGraphModel }) {
     });
   }, []);
 
-  const submitTask = useCallback(async (input: CreateTaskInput) => {
-    setIsCreating(true);
-    setCreateError(undefined);
-    try {
-      const result = await createTask(input);
-      setGraph(result.graph);
-      setSelection({ kind: "task", taskId: result.task.id });
-      setIsCreateOpen(false);
-    } catch (error: unknown) {
-      setCreateError(errorMessage(error));
-    } finally {
-      setIsCreating(false);
-    }
-  }, []);
+  const submitTask = useCallback(
+    async (input: CreateTaskInput) => {
+      if (createTarget === undefined) {
+        return;
+      }
+      setIsCreating(true);
+      setCreateError(undefined);
+      try {
+        const result =
+          createTarget.kind === "subtask"
+            ? await createSubtask(createTarget.parentTaskId, input)
+            : await createTask(input);
+        setGraph(result.graph);
+        setSelection({ kind: "task", taskId: result.task.id });
+        if (createTarget.kind === "subtask") {
+          setExpandedTaskIds((current) =>
+            new Set(current).add(createTarget.parentTaskId),
+          );
+        }
+        setCreateTarget(undefined);
+      } catch (error: unknown) {
+        setCreateError(errorMessage(error));
+      } finally {
+        setIsCreating(false);
+      }
+    },
+    [createTarget],
+  );
 
   const submitRequiredFor = useCallback(
     async (source: string, target: string) => {
@@ -162,7 +180,7 @@ function TaskWorkspace({ initialGraph }: { initialGraph: TaskGraphModel }) {
         relationshipCount={graph.relationships.length}
         onCreateTask={() => {
           setCreateError(undefined);
-          setIsCreateOpen(true);
+          setCreateTarget({ kind: "task" });
         }}
         onRelayout={() => setLayoutRequest((current) => current + 1)}
       />
@@ -228,17 +246,22 @@ function TaskWorkspace({ initialGraph }: { initialGraph: TaskGraphModel }) {
           onMarkTaskDone={(task) =>
             void changeTask(task.id, { status: "completed" }, "completed")
           }
+          onNewSubtask={(task) => {
+            setCreateError(undefined);
+            setCreateTarget({ kind: "subtask", parentTaskId: task.id });
+          }}
         />
       </div>
-      {isCreateOpen ? (
+      {createTarget === undefined ? null : (
         <CreateTaskDialog
           createdByOptions={createdByOptions}
           error={createError}
           isSubmitting={isCreating}
-          onClose={() => setIsCreateOpen(false)}
+          kind={createTarget.kind}
+          onClose={() => setCreateTarget(undefined)}
           onCreate={(input) => void submitTask(input)}
         />
-      ) : null}
+      )}
       {deletion.confirmation === undefined ? null : (
         <DeleteConfirmationDialog
           confirmLabel={deletion.confirmation.confirmLabel}
@@ -274,26 +297,10 @@ export default function App() {
   }, []);
 
   if (resource.kind === "loading") {
-    return (
-      <main className="state-page">
-        <LoaderCircle
-          className="animate-spin text-indigo-600"
-          aria-hidden="true"
-        />
-        <p>Loading task graph…</p>
-      </main>
-    );
+    return <GraphLoadState kind="loading" />;
   }
   if (resource.kind === "error") {
-    return (
-      <main className="state-page text-rose-700" role="alert">
-        <AlertCircle aria-hidden="true" />
-        <div>
-          <h1 className="font-semibold">Could not open the task graph</h1>
-          <p className="mt-1 text-sm">{resource.message}</p>
-        </div>
-      </main>
-    );
+    return <GraphLoadState kind="error" message={resource.message} />;
   }
   return <TaskWorkspace initialGraph={resource.graph} />;
 }

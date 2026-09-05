@@ -79,6 +79,47 @@ describe("GraphStore", () => {
     expect(JSON.parse(await readFile(path, "utf8"))).toEqual(graph);
   });
 
+  it("creates a task and its subtask relationship in one atomic write", async () => {
+    const path = await createGraphFile();
+    let nextId = 0;
+    const store = new GraphStore(path, {
+      createId: () => `00000000-0000-4000-8000-00000000000${++nextId}`,
+      now: () => new Date("2026-09-01T08:00:00Z"),
+    });
+    const parent = await store.createTask({
+      ...input,
+      title: "Prepare release",
+    });
+
+    const result = await store.createSubtask({
+      parentId: parent.task.id,
+      task: input,
+    });
+
+    expect(result.task.title).toBe("Write release notes");
+    expect(result.relationship).toEqual({
+      id: `subtask-of:${result.task.id}->${parent.task.id}`,
+      kind: "subtask-of",
+      source: result.task.id,
+      target: parent.task.id,
+      metadata: {},
+    });
+    expect(result.graph.tasks).toEqual([parent.task, result.task]);
+    expect(result.graph.relationships).toEqual([result.relationship]);
+    expect(JSON.parse(await readFile(path, "utf8"))).toEqual(result.graph);
+  });
+
+  it("rejects a subtask for a missing parent without changing the graph", async () => {
+    const path = await createGraphFile();
+    const original = await readFile(path, "utf8");
+    const store = new GraphStore(path);
+
+    await expect(
+      store.createSubtask({ parentId: "missing", task: input }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    expect(await readFile(path, "utf8")).toBe(original);
+  });
+
   it("serializes concurrent creates so neither task is lost", async () => {
     const path = await createGraphFile();
     let nextId = 0;

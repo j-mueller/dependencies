@@ -70,6 +70,11 @@ export const createTaskInputSchema = z.object({
   executionType: executionTypeSchema,
 });
 
+export const createSubtaskInputSchema = z.object({
+  parentId: z.string().trim().min(1),
+  task: createTaskInputSchema,
+});
+
 export const relationshipSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(["is-required-for", "subtask-of"]),
@@ -276,6 +281,12 @@ export const taskGraphSchema = baseTaskGraphSchema.superRefine(validateGraph);
 export const createTaskResponseSchema = z.object({
   graph: taskGraphSchema,
   task: taskSchema,
+});
+
+export const createSubtaskResponseSchema = z.object({
+  graph: taskGraphSchema,
+  task: taskSchema,
+  relationship: relationshipSchema,
 });
 
 export const updateTaskResponseSchema = z.object({

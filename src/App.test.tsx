@@ -509,6 +509,86 @@ describe("App", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("creates a subtask from the selected task pane", async () => {
+    const user = userEvent.setup();
+    const [parent] = graph.tasks;
+    if (parent === undefined) {
+      throw new Error("Parent task fixture is missing");
+    }
+    const createdTask = {
+      ...parent,
+      id: "local:release-notes",
+      source: { provider: "local" },
+      title: "Write release notes",
+      description: "",
+      createdAt: "2026-09-01T08:00:00Z",
+      createdBy: { login: "ghost" },
+      duration: 1,
+      metadata: {},
+    };
+    const relationship = {
+      id: `subtask-of:${createdTask.id}->${parent.id}`,
+      kind: "subtask-of",
+      source: createdTask.id,
+      target: parent.id,
+      metadata: {},
+    };
+    const createdGraph = {
+      ...graph,
+      tasks: [...graph.tasks, createdTask],
+      relationships: [...graph.relationships, relationship],
+    };
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(Response.json(graph))
+      .mockResolvedValueOnce(
+        Response.json(
+          { graph: createdGraph, task: createdTask, relationship },
+          { status: 201 },
+        ),
+      );
+    render(<App />);
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Select Launch roadmap",
+        hidden: true,
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "New sub-task" }));
+    expect(
+      screen.getByRole("heading", { name: "Create a new sub-task" }),
+    ).toBeVisible();
+    await user.type(screen.getByLabelText("Title"), "Write release notes");
+    await user.click(screen.getByRole("button", { name: "Create sub-task" }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenLastCalledWith(
+        `/api/tasks/${encodeURIComponent(parent.id)}/subtasks`,
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            title: "Write release notes",
+            description: "",
+            status: "open",
+            createdBy: "ghost",
+            duration: 1,
+            executionType: "internal",
+          }),
+        }),
+      ),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Write release notes" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", {
+        name: "Select Write release notes",
+        hidden: true,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("suggests distinct creators in most-recently-used order", async () => {
     const user = userEvent.setup();
     const graphWithRepeatedCreator = {

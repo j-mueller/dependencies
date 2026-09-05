@@ -9,6 +9,7 @@ interface CreateTaskDialogProps {
   createdByOptions: readonly string[];
   error: string | undefined;
   isSubmitting: boolean;
+  kind: "task" | "subtask";
   onClose: () => void;
   onCreate: (input: CreateTaskInput) => void;
 }
@@ -22,12 +23,15 @@ export function CreateTaskDialog({
   createdByOptions,
   error,
   isSubmitting,
+  kind,
   onClose,
   onCreate,
 }: CreateTaskDialogProps) {
   const titleReference = useRef<HTMLInputElement>(null);
   const formReference = useRef<HTMLFormElement>(null);
   const [validationError, setValidationError] = useState<string>();
+  const isSubtask = kind === "subtask";
+  const createLabel = isSubtask ? "Create sub-task" : "Create task";
 
   useEffect(() => {
     titleReference.current?.focus();
@@ -75,12 +79,14 @@ export function CreateTaskDialog({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow">Project task</p>
+            <p className="eyebrow">
+              {isSubtask ? "Project sub-task" : "Project task"}
+            </p>
             <h2
               className="mt-1 text-xl font-semibold text-slate-950"
               id="create-task-title"
             >
-              Create a new task
+              {isSubtask ? "Create a new sub-task" : "Create a new task"}
             </h2>
           </div>
           <button
@@ -171,7 +177,7 @@ export function CreateTaskDialog({
               className="primary-button"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Creating…" : "Create task"}
+              {isSubmitting ? "Creating…" : createLabel}
             </button>
           </div>
         </form>

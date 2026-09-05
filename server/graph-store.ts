@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 
 import {
   createRequiredForInputSchema,
+  createSubtaskInputSchema,
   createTaskInputSchema,
   deleteRelationshipsInputSchema,
   deleteTaskInputSchema,
@@ -12,7 +13,12 @@ import {
   taskSchema,
   updateTaskInputSchema,
 } from "../src/model/task-graph.js";
-import type { Relationship, Task, TaskGraph } from "../src/model/task-graph.js";
+import type {
+  CreateTaskInput,
+  Relationship,
+  Task,
+  TaskGraph,
+} from "../src/model/task-graph.js";
 import { GraphEntityNotFoundError } from "./graph-errors.js";
 
 interface GraphStoreDependencies {
@@ -23,6 +29,10 @@ interface GraphStoreDependencies {
 interface CreateTaskResult {
   graph: TaskGraph;
   task: Task;
+}
+
+interface CreateSubtaskResult extends CreateTaskResult {
+  relationship: Relationship;
 }
 
 interface UpdateTaskResult {
@@ -106,22 +116,25 @@ export class GraphStore {
     return operation;
   }
 
+  #buildTask(values: CreateTaskInput): Task {
+    return taskSchema.parse({
+      id: `local:${this.#dependencies.createId()}`,
+      source: { provider: "local" },
+      title: values.title,
+      description: values.description,
+      createdAt: this.#dependencies.now().toISOString(),
+      status: values.status,
+      createdBy: { login: values.createdBy },
+      pullRequests: [],
+      duration: values.duration,
+      executionType: values.executionType,
+      metadata: {},
+    });
+  }
+
   createTask(input: unknown): Promise<CreateTaskResult> {
     return this.#enqueue(async () => {
-      const values = createTaskInputSchema.parse(input);
-      const task = taskSchema.parse({
-        id: `local:${this.#dependencies.createId()}`,
-        source: { provider: "local" },
-        title: values.title,
-        description: values.description,
-        createdAt: this.#dependencies.now().toISOString(),
-        status: values.status,
-        createdBy: { login: values.createdBy },
-        pullRequests: [],
-        duration: values.duration,
-        executionType: values.executionType,
-        metadata: {},
-      });
+      const task = this.#buildTask(createTaskInputSchema.parse(input));
       const current = await this.read();
       const graph = parseTaskGraph({
         ...current,
@@ -129,6 +142,33 @@ export class GraphStore {
       });
       await writeAtomically(this.#path, graph);
       return { graph, task };
+    });
+  }
+
+  createSubtask(input: unknown): Promise<CreateSubtaskResult> {
+    return this.#enqueue(async () => {
+      const values = createSubtaskInputSchema.parse(input);
+      const task = this.#buildTask(values.task);
+      const current = await this.read();
+      if (!current.tasks.some(({ id }) => id === values.parentId)) {
+        throw new GraphEntityNotFoundError(
+          `Task not found: ${values.parentId}`,
+        );
+      }
+      const relationship = relationshipSchema.parse({
+        id: `subtask-of:${task.id}->${values.parentId}`,
+        kind: "subtask-of",
+        source: task.id,
+        target: values.parentId,
+        metadata: {},
+      });
+      const graph = parseTaskGraph({
+        ...current,
+        tasks: [...current.tasks, task],
+        relationships: [...current.relationships, relationship],
+      });
+      await writeAtomically(this.#path, graph);
+      return { graph, task, relationship };
     });
   }
 

@@ -348,3 +348,18 @@
   dependency audit, and Nix flake evaluation.
 - Confirmed in Chromium at an 800-pixel viewport that both controls use no-wrap
   text and contain their full content without horizontal overflow.
+
+## 2026-09-01: Phase 18 inspector subtask creation
+
+- Added **New sub-task** to the selected-task inspector and reused the existing
+  task form with sub-task-specific headings and submit text.
+- Added one API and graph-store operation that validates the parent, constructs
+  the local child and `subtask-of` relationship, and atomically writes both.
+- Expanded the parent and selected the new child after a successful response.
+- Passed 95 tests, formatting, lint, strict type checking, client/server builds,
+  dependency audit, and Nix flake evaluation.
+- Passed a production Chromium flow against disposable JSON that created the
+  child, displayed it under its parent, and verified the persisted relationship.
+- Reviewed validation reuse, atomicity, missing-parent behavior, UI state,
+  security, performance, and test quality. No critical or high-severity findings
+  remain.

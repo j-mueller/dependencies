@@ -21,6 +21,7 @@ interface SelectionDetailsProps {
   onDeleteRelationships: (relationship: ProjectedRelationship) => void;
   onDeleteTask: (task: Task) => void;
   onMarkTaskDone: (task: Task) => void;
+  onNewSubtask: (task: Task) => void;
 }
 
 export function SelectionDetails({
@@ -34,6 +35,7 @@ export function SelectionDetails({
   onDeleteRelationships,
   onDeleteTask,
   onMarkTaskDone,
+  onNewSubtask,
 }: SelectionDetailsProps) {
   if (selection?.kind === "relationship") {
     return (
@@ -72,6 +74,11 @@ export function SelectionDetails({
       onMarkDone={() => {
         if (task !== undefined) {
           onMarkTaskDone(task);
+        }
+      }}
+      onNewSubtask={() => {
+        if (task !== undefined) {
+          onNewSubtask(task);
         }
       }}
     />

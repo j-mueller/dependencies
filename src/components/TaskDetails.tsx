@@ -4,6 +4,7 @@ import {
   Check,
   CircleUserRound,
   GitPullRequest,
+  ListPlus,
   Trash2,
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ interface TaskDetailsProps {
   onDelete: () => void;
   onExecutionTypeChange: (executionType: Task["executionType"]) => void;
   onMarkDone: () => void;
+  onNewSubtask: () => void;
 }
 
 const statusLabels: Record<Task["status"], string> = {
@@ -41,6 +43,7 @@ function TaskActions({
   onCancel,
   onDelete,
   onMarkDone,
+  onNewSubtask,
 }: TaskDetailsProps & { task: Task }) {
   return (
     <>
@@ -59,6 +62,16 @@ function TaskActions({
           {error}
         </p>
       )}
+
+      <button
+        className="secondary-button mt-7 inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap"
+        disabled={isUpdating}
+        type="button"
+        onClick={onNewSubtask}
+      >
+        <ListPlus aria-hidden="true" size={16} />
+        New sub-task
+      </button>
 
       {task.status === "completed" ? null : (
         <button
@@ -101,6 +114,7 @@ export function TaskDetails({
   onDelete,
   onExecutionTypeChange,
   onMarkDone,
+  onNewSubtask,
 }: TaskDetailsProps) {
   if (task === undefined) {
     return (
@@ -247,6 +261,7 @@ export function TaskDetails({
         onDelete={onDelete}
         onExecutionTypeChange={onExecutionTypeChange}
         onMarkDone={onMarkDone}
+        onNewSubtask={onNewSubtask}
       />
     </aside>
   );

@@ -1,5 +1,6 @@
 import {
   createRequiredForResponseSchema,
+  createSubtaskResponseSchema,
   createTaskResponseSchema,
   deleteRelationshipsResponseSchema,
   deleteTaskResponseSchema,
@@ -23,6 +24,10 @@ interface CreateTaskResult {
 
 interface CreateRequiredForResult {
   graph: TaskGraph;
+  relationship: Relationship;
+}
+
+interface CreateSubtaskResult extends CreateTaskResult {
   relationship: Relationship;
 }
 
@@ -78,6 +83,24 @@ export async function createTask(
     throw new Error(await readError(response));
   }
   return createTaskResponseSchema.parse(await response.json());
+}
+
+export async function createSubtask(
+  parentTaskId: string,
+  input: CreateTaskInput,
+): Promise<CreateSubtaskResult> {
+  const response = await fetch(
+    `/api/tasks/${encodeURIComponent(parentTaskId)}/subtasks`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return createSubtaskResponseSchema.parse(await response.json());
 }
 
 export async function createRequiredFor(

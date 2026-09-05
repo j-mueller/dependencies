@@ -33,10 +33,12 @@ Select a task or relationship to inspect it in the side panel. Relationship
 details include the type, visible endpoints, and local metadata from every JSON
 relationship represented by the displayed edge. Delete actions require
 confirmation. Deleting a task also deletes all relationships connected to it.
-Select an unfinished task and choose **Mark done** to persist its completed
-status. Choose **Cancel task** to persist its cancelled status. **Hide completed**
-removes completed and cancelled tasks and their incident links from the current
-view while keeping unfinished children visible.
+Choose **New sub-task** on a selected task to create a local child and its
+`subtask-of` relationship in one atomic update. Select an unfinished task and
+choose **Mark done** to persist its completed status. Choose **Cancel task** to
+persist its cancelled status. **Hide completed** removes completed and cancelled
+tasks and their incident links from the current view while keeping unfinished
+children visible.
 
 Run all local quality gates with:
 

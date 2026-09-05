@@ -342,3 +342,13 @@ application code remains asynchronous where it performs browser I/O.
 - Both affected controls use the shared secondary-button style inside flex
   layouts. Explicit intrinsic sizing and no-wrap utilities prevent flex shrink
   from splitting their labels.
+
+## Phase 18 findings
+
+- Creating the task and relationship through separate existing endpoints could
+  leave an orphan task after a partial failure. A dedicated subtask operation
+  preserves the graph invariant with one queued atomic write.
+- A successful creation expands the selected parent before selecting the child,
+  so hierarchy projection keeps the new task visible.
+- Browser verification used disposable data and did not modify the live task
+  sheet.

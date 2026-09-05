@@ -200,6 +200,12 @@ metadata.
   - [x] Task 17.1: Reproduce narrow secondary action buttons in a UI test
   - [x] Task 17.2: Keep Relayout and Cancel task at their intrinsic widths
   - [x] Task 17.3: Run quality gates and browser verification
+- [x] Phase 18: Create subtasks from the inspector
+  - [x] Task 18.1: Specify atomic subtask creation in store, API, and UI tests
+  - [x] Task 18.2: Add the atomic subtask persistence endpoint
+  - [x] Task 18.3: Reuse the task dialog from a New sub-task inspector action
+  - [x] Task 18.4: Run quality gates and browser verification
+  - [x] Task 18.5: Review the finished implementation
 
 ## Dependencies
 
@@ -282,3 +288,5 @@ metadata.
 - [x] A selected task can switch between internal and external execution, and the
       JSON file is updated atomically without changing unrelated task fields.
 - [x] Relayout and Cancel task remain on one line with aligned icons.
+- [x] A selected task offers New sub-task, which creates a local task and its
+      subtask-of relationship in one atomic JSON update.
